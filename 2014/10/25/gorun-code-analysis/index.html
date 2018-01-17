@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>gorun实现分析 | kmiku7&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="学习golang的时候想写点代码还得到特定的目录结构下，build &amp;amp; run，实在是太罗嗦，好在Programming in Go这本书一开始就提到了把golang当作脚本语言使的工具，但是直到这本书快看完了才受够了这个流程决定使用这两个工具（好强的忍耐力。。。 这篇文章是对gorun代码的分析，项目地址是：https://wiki.ubuntu.com/gorun 使用方法123456">
+<meta name="keywords" content="golang,code-analysis,gorun">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gorun实现分析">
+<meta property="og:url" content="http://kmiku7.github.io/2014/10/25/gorun-code-analysis/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="学习golang的时候想写点代码还得到特定的目录结构下，build &amp;amp; run，实在是太罗嗦，好在Programming in Go这本书一开始就提到了把golang当作脚本语言使的工具，但是直到这本书快看完了才受够了这个流程决定使用这两个工具（好强的忍耐力。。。 这篇文章是对gorun代码的分析，项目地址是：https://wiki.ubuntu.com/gorun 使用方法123456">
+<meta property="og:updated_time" content="2018-01-17T08:59:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="gorun实现分析">
+<meta name="twitter:description" content="学习golang的时候想写点代码还得到特定的目录结构下，build &amp;amp; run，实在是太罗嗦，好在Programming in Go这本书一开始就提到了把golang当作脚本语言使的工具，但是直到这本书快看完了才受够了这个流程决定使用这两个工具（好强的忍耐力。。。 这篇文章是对gorun代码的分析，项目地址是：https://wiki.ubuntu.com/gorun 使用方法123456">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-gorun-code-analysis" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/10/25/gorun-code-analysis/" class="article-date">
+  <time datetime="2014-10-25T12:01:22.000Z" itemprop="datePublished">Oct 25 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/golang/">golang</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      gorun实现分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>学习golang的时候想写点代码还得到特定的目录结构下，build &amp; run，实在是太罗嗦，好在Programming in Go这本书一开始就提到了把golang当作脚本语言使的工具，但是直到这本书快看完了才受够了这个流程决定使用这两个工具（好强的忍耐力。。。</p>
+<p>这篇文章是对gorun代码的分析，项目地址是：<a href="https://wiki.ubuntu.com/gorun" target="_blank" rel="noopener">https://wiki.ubuntu.com/gorun</a></p>
+<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">gorun &lt;source-file&gt; [option...]</span><br><span class="line">```  </span><br><span class="line">option是传给source-file的参数</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span>## 处理流程</span><br><span class="line">脚本实现思路是把输入的源文件拷贝到系统TempDir目录下，然后编译执行。大致流程如下：</span><br><span class="line">* 创建工作目录：  </span><br><span class="line">rundir = TMPDIR/gorun-hostname-euid[-NUM]/GOOS_GOARCH</span><br><span class="line">* 生成可执行文件的文件名：  </span><br><span class="line">runfile = EvalSymlinks(Abs(sourcefile)), Replace("%"-&gt;"%%", filepath.Separator-&gt;"%")</span><br><span class="line">* 基于ModTime检测源文件相对上次编译是否更新</span><br><span class="line">若不需要重新编译，则touch(runfile) &amp; CleanDir(rundir)，请注意touch的原因</span><br><span class="line">* 若需要编译则调用go tool工具编译，这样可以指定产出文件。  </span><br><span class="line">如果源文件首行以#!开头，则会生成一个临时的源文件runfile.pid.go并且编译后删除。原因是代码还是用go编译的，#!不符合go的语法，因此源文件除了首行可以以#!开头外，其他地方都要符合go的语法。  </span><br><span class="line">* 之后使用系统调用exec执行，如果是因为目标文件不存在导致失败则会有重试。  </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">目前代码里有个小问题：</span><br><span class="line">```go</span><br><span class="line">// CleanDir removes binary files under rundir in case they were not</span><br><span class="line">// accessed for more than CleanFileDelay nanoseconds.  A last-cleaned</span><br><span class="line">// marker file is created so that the next verification is only done</span><br><span class="line">// after CleanFileDelay nanoseconds.</span><br><span class="line">func CleanDir(rundir string, now time.Time) error &#123;</span><br><span class="line">    cleanedfile := filepath.Join(rundir, "last-cleaned")</span><br><span class="line">    cleanLine := now.Add(-CleanFileDelay)</span><br><span class="line">    if info, err := os.Stat(cleanedfile); err == nil &amp;&amp; info.ModTime().After(cleanLine) &#123;</span><br><span class="line">        // It's been cleaned recently.</span><br><span class="line">        return nil</span><br><span class="line">    &#125;</span><br><span class="line">    f, err := os.Create(cleanedfile)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        return err</span><br><span class="line">    &#125;</span><br><span class="line">    _, err = f.Write([]byte(now.Format(time.RFC3339)))</span><br><span class="line">    f.Close()</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        return err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // Look for expired files.</span><br><span class="line">    d, err := os.Open(rundir)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        return err</span><br><span class="line">    &#125;</span><br><span class="line">    infos, err := d.Readdir(-1)</span><br><span class="line">    for _, info := range infos &#123;</span><br><span class="line">        atim := sysStat(info).Atim</span><br><span class="line">        access := time.Unix(int64(atim.Sec), int64(atim.Nsec))</span><br><span class="line">        if access.Before(cleanLine) &#123;</span><br><span class="line">            os.Remove(filepath.Join(rundir, info.Name()))</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里在判断”old compiled files”用的是atime，首先文件系统可以配置不记录atime，这样的话就没法判断bin文件是不是被用过。然后是如果文件已经存在，则Create不会更新atime，这就导致last-cleaned也会被删除，下一次gorun还会调用CleanDir一次。但是都不是大问题，atime本身比较蛋疼需要注意。</p>
+<p>还有就是go run可以编译并执行源程序，再用第三方脚本就没必要了。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2014/10/25/gorun-code-analysis/" data-id="cjciuu7z50006wks63rlb6bqy" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2014/10/25/gorun-code-analysis/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/golang/">golang</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/gorun/">gorun</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/11/15/cpp-vector-deque-stack/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          c++ vector和deque的区别
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Python/" style="font-size: 10px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 16.67px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 20px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2015/08/14/codis-network-archi/">Codis请求转发流程分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/27/b-tree-implement/">B-Tree实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/25/basic-aho-corasick-algorithm/">AC-Search实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/24/leetcode-combination-sum-ii/">LeetCode - Combination Sum II</a>
+          </li>
+        
+          <li>
+            <a href="/2015/01/06/the-obscure-in-python-thread/">Python线程的隐晦之处</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2014/10/25/gorun-code-analysis/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

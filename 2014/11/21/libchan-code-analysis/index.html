@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>libchan实现分析 | kmiku7&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="libchan是docker衍生出来的子模块，用来在goroutine间、进程间、机器间提供相同的类似go channel的通信方式，每个channal是单工的，方便程序从多goroutine到多进程再到多机的扩展。使用上跟linux pipe类似。 项目地址： https://github.com/docker/libchan代码版本：commit 1e141b35ee 这是项目里提到的功能：">
+<meta name="keywords" content="golang,code-analysis,libchan,docker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libchan实现分析">
+<meta property="og:url" content="http://kmiku7.github.io/2014/11/21/libchan-code-analysis/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="libchan是docker衍生出来的子模块，用来在goroutine间、进程间、机器间提供相同的类似go channel的通信方式，每个channal是单工的，方便程序从多goroutine到多进程再到多机的扩展。使用上跟linux pipe类似。 项目地址： https://github.com/docker/libchan代码版本：commit 1e141b35ee 这是项目里提到的功能：">
+<meta property="og:image" content="http://kmiku7.github.io/img/libchan-send-io.png">
+<meta property="og:updated_time" content="2018-01-17T08:59:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="libchan实现分析">
+<meta name="twitter:description" content="libchan是docker衍生出来的子模块，用来在goroutine间、进程间、机器间提供相同的类似go channel的通信方式，每个channal是单工的，方便程序从多goroutine到多进程再到多机的扩展。使用上跟linux pipe类似。 项目地址： https://github.com/docker/libchan代码版本：commit 1e141b35ee 这是项目里提到的功能：">
+<meta name="twitter:image" content="http://kmiku7.github.io/img/libchan-send-io.png">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-libchan-code-analysis" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/11/21/libchan-code-analysis/" class="article-date">
+  <time datetime="2014-11-21T01:41:58.000Z" itemprop="datePublished">Nov 21 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/docker/">docker</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      libchan实现分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>libchan是docker衍生出来的子模块，用来在goroutine间、进程间、机器间提供相同的类似go channel的通信方式，<strong>每个channal是单工的</strong>，方便程序从多goroutine到多进程再到多机的扩展。使用上跟linux pipe类似。</p>
+<p>项目地址： <a href="https://github.com/docker/libchan" target="_blank" rel="noopener">https://github.com/docker/libchan</a><br>代码版本：commit 1e141b35ee</p>
+<p>这是项目里提到的功能：  </p>
+<ol>
+<li>Simple message passing  </li>
+<li>Synchronization for concurrent programming  </li>
+<li>Nesting: channels can send channels<br>1/3是可以理解的，2有一点疑问，可以参考项目issue里的讨论。</li>
+</ol>
+<p>使用方法参考项目里的demo： <a href="https://github.com/docker/libchan/tree/master/examples/rexec" target="_blank" rel="noopener">https://github.com/docker/libchan/tree/master/examples/rexec</a></p>
+<h3 id="接口定义"><a href="#接口定义" class="headerlink" title="接口定义"></a>接口定义</h3><p>项目里目前提供了基于tcp/spdy和inmem两种实现，每种实现只需实现以下接口即可：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Transport <span class="keyword">interface</span> &#123;</span><br><span class="line">    NewSendChannel() (Sender, error)</span><br><span class="line">    WaitReceiveChannel() (Receiver, error)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> Sender <span class="keyword">interface</span> &#123;</span><br><span class="line">    Send(message <span class="keyword">interface</span>&#123;&#125;) error</span><br><span class="line">    Close() error</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> Receiver <span class="keyword">interface</span> &#123;</span><br><span class="line">    Receive(message <span class="keyword">interface</span>&#123;&#125;) error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>inmem没有提供Transport，是通过Pipe()函数成生的sender &amp; receiver，因此spdy/inmen的实现在channel初始化的时候稍有不同。</p>
+<h3 id="可打包传输的数据类型"><a href="#可打包传输的数据类型" class="headerlink" title="可打包传输的数据类型"></a>可打包传输的数据类型</h3><p>数据传输使用<a href="https://github.com/dmcgowan/go" target="_blank" rel="noopener">github.com/dmcgowan/go/codec</a>进行编码，打包格式用的msgpack。<br>codec默认支持以下数据类型：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file: https://github.com/dmcgowan/go/blob/master/codec/encode.go</span></span><br><span class="line"><span class="comment">// encDriver abstracts the actual codec (binc vs msgpack, etc)</span></span><br><span class="line"><span class="keyword">type</span> encDriver <span class="keyword">interface</span> &#123;</span><br><span class="line">    isBuiltinType(rt <span class="keyword">uintptr</span>) <span class="keyword">bool</span></span><br><span class="line">    encodeBuiltin(rt <span class="keyword">uintptr</span>, v <span class="keyword">interface</span>&#123;&#125;)</span><br><span class="line">    encodeNil()</span><br><span class="line">    encodeInt(i <span class="keyword">int64</span>)</span><br><span class="line">    encodeUint(i <span class="keyword">uint64</span>)</span><br><span class="line">    encodeBool(b <span class="keyword">bool</span>)</span><br><span class="line">    encodeFloat32(f <span class="keyword">float32</span>)</span><br><span class="line">    encodeFloat64(f <span class="keyword">float64</span>)</span><br><span class="line">    encodeExtPreamble(xtag <span class="keyword">byte</span>, length <span class="keyword">int</span>)</span><br><span class="line">    encodeArrayPreamble(length <span class="keyword">int</span>)</span><br><span class="line">    encodeMapPreamble(length <span class="keyword">int</span>)</span><br><span class="line">    encodeString(c charEncoding, v <span class="keyword">string</span>)</span><br><span class="line">    encodeSymbol(v <span class="keyword">string</span>)</span><br><span class="line">    encodeStringBytes(c charEncoding, v []<span class="keyword">byte</span>)</span><br><span class="line">    <span class="comment">//TODO</span></span><br><span class="line">    <span class="comment">//encBignum(f *big.Int)</span></span><br><span class="line">    <span class="comment">//encStringRunes(c charEncoding, v []rune)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>codec支持扩展，可以注册其他数据类型的编解码句柄。libchan扩展支持Sender/Receiver/io.ReadWriteCloser/io.ReadCloser/io.WriteCloser的打包传输。<br>TCPConn &amp; UDPConn属于io.ReadWriteCloser类型，spdy实现只能传输建立在sender&amp;receiver所在主机之间的连接。</p>
+<p>io对象传输的实现流程是：</p>
+<ul>
+<li>sender端需要打包发送io句柄A  </li>
+<li>在sender&amp;receiver之间建立通信管道P(P-Sender, P-Receiver)，inmem、spdy分别使用net.Pipe和spdy.stream建立。  </li>
+<li>sender起goroutine在A &amp; P-Sender间进行数据拷贝，发送管道P的ID，receiver端对P-receiver进行读写。 </li>
+</ul>
+<p>操作完成后的情况如下图：</p>
+<p><img src="/img/libchan-send-io.png" alt="" title="libchan-send-io.png"></p>
+<p>###代码分析</p>
+<p>####inmem<br>每一对sender&amp;receiver都有与之关联的一个session数据结构，用来管理通过该chan传输的sender、receiver、io对象等。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> streamSession <span class="keyword">struct</span> &#123;</span><br><span class="line">    pipeLock    sync.Mutex</span><br><span class="line">    pipeCount   <span class="keyword">uint64</span></span><br><span class="line">    pipeReaders <span class="keyword">map</span>[<span class="keyword">uint64</span>]*io.PipeReader</span><br><span class="line">    pipeWriters <span class="keyword">map</span>[<span class="keyword">uint64</span>]*io.PipeWriter</span><br><span class="line"></span><br><span class="line">    handler codec.Handle</span><br><span class="line"></span><br><span class="line">    referenceLock sync.Mutex</span><br><span class="line">    referenceID   <span class="keyword">uint64</span></span><br><span class="line">    byteStreams   <span class="keyword">map</span>[<span class="keyword">uint64</span>]*byteStream</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>handler是一个codec编解码句柄。<br>io对象的传输是通过net.Pipe()创建的管道和sender端的proxy实现，IO通道存储在byteStreams字段里，net.Pipe()返回两个句柄，对应两个byteStream对象，分别存储在map[ref_ID] map[ref_ID+1]里，本地使用map[ref_ID]进行读写，传输ref_ID+1给对端，对端使用map[ref_ID+1]的对象读写。<br>io.ReadClose &amp; io.WriteClose &amp; io.ReadWriteCloser实现方式相同，只是在sender端起的proxy routine不同。byteStream是可读写的，根据存储byteStream对象的字段类型的不同会表现出只读、只写、读写的不同特征。</p>
+<p>Sender &amp; Receiver通过io.Pipe()传输数据，返回的通道是单工的，读写两端分别存储在pipeReaders &amp; pipeWriters字段里。S &amp; R传输处理流程类似，比如senderA.send(otherB)，如果senderB属于senderA的session，则直接传输对应的map-key，如果不是则新建一个io.Pipe，通过goroutine io.copy实现转发。</p>
+<p>接下来分析下io.ReadWriteCloser、Sender对象编码传输、解码使用的流程。</p>
+<p>#####临时对象构造<br>首先对要传输的对象构造出来一个临时的拷贝，其中的io.ReadWriteCloser/Sender转换成内部对应的bytesStream对象和同session的Sender，如有需要，转发的proxy都已启动。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(w *pipeSender)</span> <span class="title">copyValue</span><span class="params">(v <span class="keyword">interface</span>&#123;&#125;)</span> <span class="params">(<span class="keyword">interface</span>&#123;&#125;, error)</span></span> &#123;</span><br><span class="line">    <span class="keyword">switch</span> val := v.(<span class="keyword">type</span>) &#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">case</span> *pipeSender:</span><br><span class="line">        <span class="keyword">if</span> val.session != w.session &#123;</span><br><span class="line">            <span class="keyword">return</span> w.copySender(val)</span><br><span class="line">        &#125;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">case</span> io.ReadWriteCloser:</span><br><span class="line">        <span class="keyword">return</span> w.copyByteStream(val)</span><br><span class="line">    ...</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> v, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>copyByteStream行为是在该session内新建一个net.Pipe，然后启动转发的proxy-routine。newByteStream()创建一对byteStream对象代表net.Pipe的两端，存储在byteStreams字段里，id分别为referenceID和referenceID+1，referenceID+1给对端使用。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(w *pipeSender)</span> <span class="title">copyByteStream</span><span class="params">(stream io.ReadWriteCloser)</span> <span class="params">(io.ReadWriteCloser, error)</span></span> &#123;</span><br><span class="line">    streamCopy, err := w.session.newByteStream()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        io.Copy(streamCopy, stream)</span><br><span class="line">        streamCopy.Close()</span><br><span class="line">    &#125;()</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        io.Copy(stream, streamCopy)</span><br><span class="line">        stream.Close()</span><br><span class="line">    &#125;()</span><br><span class="line">    <span class="keyword">return</span> streamCopy, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *streamSession)</span> <span class="title">newByteStream</span><span class="params">()</span> <span class="params">(io.ReadWriteCloser, error)</span></span> &#123;</span><br><span class="line">    c1, c2 := net.Pipe()</span><br><span class="line">    bs := &amp;byteStream&#123;</span><br><span class="line">        Conn:        c1,</span><br><span class="line">        referenceID: s.referenceID,</span><br><span class="line">        session:     s,</span><br><span class="line">    &#125;</span><br><span class="line">    s.referenceLock.Lock()</span><br><span class="line">    s.byteStreams[s.referenceID] = bs</span><br><span class="line">    s.byteStreams[s.referenceID+<span class="number">1</span>] = &amp;byteStream&#123;</span><br><span class="line">        Conn:        c2,</span><br><span class="line">        referenceID: s.referenceID + <span class="number">1</span>,</span><br><span class="line">        session:     s,</span><br><span class="line">    &#125;</span><br><span class="line">    s.referenceID = s.referenceID + <span class="number">2</span></span><br><span class="line">    s.referenceLock.Unlock()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> bs, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>copySender()行为类似：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(w *pipeSender)</span> <span class="title">copySender</span><span class="params">(val Sender)</span> <span class="params">(Sender, error)</span></span> &#123;</span><br><span class="line">    recv, send, err := w.CreateNestedReceiver()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        Copy(val, recv)</span><br><span class="line">        val.Close()</span><br><span class="line">    &#125;()</span><br><span class="line">    <span class="keyword">return</span> send, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>#####序列化<br>byteStream和Sender使用注册的codec扩展句柄编码，byteStream编码函数：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *streamSession)</span> <span class="title">encodeStream</span><span class="params">(v reflect.Value)</span> <span class="params">([]<span class="keyword">byte</span>, error)</span></span> &#123;</span><br><span class="line">    bs := v.Interface().(byteStream)</span><br><span class="line">    <span class="keyword">if</span> bs.referenceID == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, errors.New(<span class="string">"bad type"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> buf [<span class="number">8</span>]<span class="keyword">byte</span></span><br><span class="line">    written := binary.PutUvarint(buf[:], <span class="keyword">uint64</span>(bs.referenceID)^<span class="number">0x01</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> buf[:written], <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>byteStream每次都创建一对，并且referenceID从2顺序使用，因此本端对象的referenceID总是偶数，对端使用referenceID+1存储的byteStream，uint64(bs.referenceID)^0x01等价于bs.referenceID+1，这个地方太绕了。<br>encodeSender()编码Sender对象，行为类似。</p>
+<p>#####反序列化<br>对于一个整数，反序列化后的类型取决于存储他的对象类型，所以收发两端的数据结构不对应就会出错。byteStream反序列化逻辑如下，Sender处理逻辑类似。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *streamSession)</span> <span class="title">decodeStream</span><span class="params">(v reflect.Value, b []<span class="keyword">byte</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    referenceID, readN := binary.Uvarint(b)</span><br><span class="line">    <span class="keyword">if</span> readN == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> errors.New(<span class="string">"bad reference id"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    bs, ok := s.byteStreams[referenceID]</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> errors.New(<span class="string">"byte stream does not exist"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> bs != <span class="literal">nil</span> &#123;</span><br><span class="line">        v.Set(reflect.ValueOf(*bs))</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>byteStream结构体嵌入了net.Conn，因此是一个io.ReadWriteClose对象。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> byteStream <span class="keyword">struct</span> &#123;</span><br><span class="line">    net.Conn</span><br><span class="line">    referenceID <span class="keyword">uint64</span></span><br><span class="line">    session     *streamSession</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>####spdy<br>这是一个基于tcp+spdy作为传输层的实现，每一对sender&amp;receiver或io对象都对应spdy的一个stream。spdy实现了Transport，也使用该数据结构管理在一个chan间传输的sub-chan、io对象的信息。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Transport <span class="keyword">struct</span> &#123;</span><br><span class="line">    conn    *spdystream.Connection</span><br><span class="line">    handler codec.Handle</span><br><span class="line"></span><br><span class="line">    receiverChan <span class="keyword">chan</span> *channel</span><br><span class="line">    channelC     *sync.Cond</span><br><span class="line">    channels     <span class="keyword">map</span>[<span class="keyword">uint64</span>]*channel</span><br><span class="line"></span><br><span class="line">    referenceLock    sync.Mutex</span><br><span class="line">    referenceCounter <span class="keyword">uint64</span></span><br><span class="line">    byteStreamC      *sync.Cond</span><br><span class="line">    byteStreams      <span class="keyword">map</span>[<span class="keyword">uint64</span>]*byteStream</span><br><span class="line"></span><br><span class="line">    netConnC *sync.Cond</span><br><span class="line">    netConns <span class="keyword">map</span>[<span class="keyword">byte</span>]<span class="keyword">map</span>[<span class="keyword">string</span>]net.Conn</span><br><span class="line">    networks <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">byte</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> channel <span class="keyword">struct</span> &#123;</span><br><span class="line">    referenceID <span class="keyword">uint64</span></span><br><span class="line">    parentID    <span class="keyword">uint64</span></span><br><span class="line">    stream      *spdystream.Stream</span><br><span class="line">    session     *Transport</span><br><span class="line">    direction   direction</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>byteStreams存储io对象转发的通道，使用TCPConn传输，因此是双工的。怎么使用依赖于持有他的对象。<br>channels存储两机间的chan通道。channel封装了一个byteStream对象和direction字段，因此只能单向使用。</p>
+<p>因为Sender&amp;Receiver和io对象都通过spdy的stream实现，所以stream建立的时候就需要进行区分：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Transport)</span> <span class="title">newStreamHandler</span><span class="params">(stream *spdystream.Stream)</span></span> &#123;</span><br><span class="line">    referenceIDString := stream.Headers().Get(<span class="string">"libchan-ref"</span>)</span><br><span class="line">    parentIDString := stream.Headers().Get(<span class="string">"libchan-parent-ref"</span>)</span><br><span class="line"></span><br><span class="line">    returnHeaders := http.Header&#123;&#125;</span><br><span class="line">    finish := <span class="literal">false</span></span><br><span class="line">    referenceID, parseErr := strconv.ParseUint(referenceIDString, <span class="number">10</span>, <span class="number">64</span>)</span><br><span class="line">    <span class="keyword">if</span> parseErr != <span class="literal">nil</span> &#123;</span><br><span class="line">        returnHeaders.Set(<span class="string">"status"</span>, <span class="string">"400"</span>)</span><br><span class="line">        finish = <span class="literal">true</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// parentIDString区分了channel和stream</span></span><br><span class="line">        <span class="keyword">if</span> parentIDString == <span class="string">""</span> &#123;</span><br><span class="line">            byteStream := &amp;byteStream&#123;</span><br><span class="line">                referenceID: referenceID,</span><br><span class="line">                stream:      stream,</span><br><span class="line">                session:     s,</span><br><span class="line">            &#125;</span><br><span class="line">            s.byteStreamC.L.Lock()</span><br><span class="line">            s.byteStreams[referenceID] = byteStream</span><br><span class="line">            s.byteStreamC.Broadcast()</span><br><span class="line">            s.byteStreamC.L.Unlock()</span><br><span class="line"></span><br><span class="line">            returnHeaders.Set(<span class="string">"status"</span>, <span class="string">"200"</span>)</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            parentID, parseErr := strconv.ParseUint(parentIDString, <span class="number">10</span>, <span class="number">64</span>)</span><br><span class="line">            <span class="keyword">if</span> parseErr != <span class="literal">nil</span> &#123;</span><br><span class="line">                returnHeaders.Set(<span class="string">"status"</span>, <span class="string">"400"</span>)</span><br><span class="line">                finish = <span class="literal">true</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                c := &amp;channel&#123;</span><br><span class="line">                    referenceID: referenceID,</span><br><span class="line">                    parentID:    parentID,</span><br><span class="line">                    stream:      stream,</span><br><span class="line">                    session:     s,</span><br><span class="line">                &#125;</span><br><span class="line">                s.channelC.L.Lock()</span><br><span class="line">                s.channels[referenceID] = c</span><br><span class="line">                s.channelC.Broadcast()</span><br><span class="line">                s.channelC.L.Unlock()</span><br><span class="line"></span><br><span class="line">                <span class="comment">// subchannel是没有方向概念的</span></span><br><span class="line">                <span class="keyword">if</span> parentID == <span class="number">0</span> &#123;</span><br><span class="line">                    c.direction = inbound</span><br><span class="line">                    s.receiverChan &lt;- c</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                returnHeaders.Set(<span class="string">"status"</span>, <span class="string">"200"</span>)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    stream.SendReply(returnHeaders, finish)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果parentIDString为空，则是一个byteStream，该stream只读、只写、读写是由持有他的对象决定的。parentIDString非空且不等于0，则是在两机间新建一个管道，创建总是由sender端发起；如果不等于，则是一个subchannel，该chan用来发送还是接收是由持有他的对象决定的。</p>
+<p>spdy实现在函数initializeHandler()注册的扩展类型编解码句柄：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Transport)</span> <span class="title">initializeHandler</span><span class="params">()</span> *<span class="title">codec</span>.<span class="title">MsgpackHandle</span></span> &#123;</span><br><span class="line">    mh := &amp;codec.MsgpackHandle&#123;WriteExt: <span class="literal">true</span>&#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Register networks</span></span><br><span class="line">    s.networks[<span class="string">"tcp"</span>] = <span class="number">0x04</span></span><br><span class="line">    s.netConns[<span class="number">0x04</span>] = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]net.Conn)</span><br><span class="line">    err = mh.AddExt(reflect.TypeOf(net.TCPConn&#123;&#125;), <span class="number">0x04</span>, s.encodeNetConn, s.decodeNetConn)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    s.networks[<span class="string">"udp"</span>] = <span class="number">0x05</span></span><br><span class="line">    s.netConns[<span class="number">0x05</span>] = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]net.Conn)</span><br><span class="line">    err = mh.AddExt(reflect.TypeOf(net.UDPConn&#123;&#125;), <span class="number">0x05</span>, s.encodeNetConn, s.decodeNetConn)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// TODO add unix network as 0x06</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> mh</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>相比inmem增加了TCPConn和UDPConn的额外处理。因此这也限制了spdy只能传输在两机间建立的连接，且接收端已经将该conn注册到这个session内。<br>这是代码中的注释：</p>
+<blockquote>
+<p>// RegisterConn registers a network connection to be used<br>// by inbound messages referring to the connection<br>// with the registered connection’s local and remote address.<br>// Note: a connection does not need to be registered before<br>// being sent in a message, but does need to be registered<br>// to by the receiver of a message. If registration should be<br>// automatic, register a listener instead.  </p>
+</blockquote>
+<p>注册的连接保存在netConns字段内，使用二维map存储：map[network-type][localaddr&lt;&gt;remoteaddr]。传输时编码的是一个三元组(network-type, local-addr, remote-addr) 。实现函数是<em>encodeNetConn(), decodeNetConn()</em>，注意解码时的字段顺序。</p>
+<p>网络连接的传输可以参考这个测试用例：<a href="https://github.com/docker/libchan/blob/master/spdy/conn_test.go" target="_blank" rel="noopener">https://github.com/docker/libchan/blob/master/spdy/conn_test.go</a></p>
+<p>###summary<br>总体来说channel通信方式使用很直观方便，屏蔽了底层的通信建立细节。但是实现方式不容易理解，看了spdy代码也不放心，出了问题debug有困难，比如：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Transport)</span> <span class="title">getByteStream</span><span class="params">(referenceID <span class="keyword">uint64</span>)</span> *<span class="title">byteStream</span></span> &#123;</span><br><span class="line">    s.byteStreamC.L.Lock()</span><br><span class="line">    bs, ok := s.byteStreams[referenceID]</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        s.byteStreamC.Wait()</span><br><span class="line">        bs, ok = s.byteStreams[referenceID]</span><br><span class="line">    &#125;</span><br><span class="line">    s.byteStreamC.L.Unlock()</span><br><span class="line">    <span class="keyword">return</span> bs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>if是不是应该换成while判断。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2014/11/21/libchan-code-analysis/" data-id="cjciuu7zg000ewks6pxwm5syi" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2014/11/21/libchan-code-analysis/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/docker/">docker</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/golang/">golang</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/libchan/">libchan</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/01/06/the-obscure-in-python-thread/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Python线程的隐晦之处
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/11/16/leetcode-sort-list/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">LeetCode - Sort List</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Python/" style="font-size: 10px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 16.67px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 20px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2015/08/14/codis-network-archi/">Codis请求转发流程分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/27/b-tree-implement/">B-Tree实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/25/basic-aho-corasick-algorithm/">AC-Search实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/24/leetcode-combination-sum-ii/">LeetCode - Combination Sum II</a>
+          </li>
+        
+          <li>
+            <a href="/2015/01/06/the-obscure-in-python-thread/">Python线程的隐晦之处</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2014/11/21/libchan-code-analysis/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>LeetCode - Sort List | kmiku7&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Sort ListSort a linked list in O(n log n) time using constant space complexity.  排序一个单向链表，要求时间复杂度O(nlgn)，空间复杂度O(1)。使用merge sort解该问题，网上的答案用的都是递归的解法，也就是top-down的实现，空间复杂度应该为O(lgn)，并不是常数，使用bottom-up的实现可以">
+<meta name="keywords" content="cpp,leetcode,sort,merge-sort,list">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LeetCode - Sort List">
+<meta property="og:url" content="http://kmiku7.github.io/2014/11/16/leetcode-sort-list/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="Sort ListSort a linked list in O(n log n) time using constant space complexity.  排序一个单向链表，要求时间复杂度O(nlgn)，空间复杂度O(1)。使用merge sort解该问题，网上的答案用的都是递归的解法，也就是top-down的实现，空间复杂度应该为O(lgn)，并不是常数，使用bottom-up的实现可以">
+<meta property="og:updated_time" content="2018-01-17T08:59:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LeetCode - Sort List">
+<meta name="twitter:description" content="Sort ListSort a linked list in O(n log n) time using constant space complexity.  排序一个单向链表，要求时间复杂度O(nlgn)，空间复杂度O(1)。使用merge sort解该问题，网上的答案用的都是递归的解法，也就是top-down的实现，空间复杂度应该为O(lgn)，并不是常数，使用bottom-up的实现可以">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-leetcode-sort-list" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/11/16/leetcode-sort-list/" class="article-date">
+  <time datetime="2014-11-16T06:42:25.000Z" itemprop="datePublished">Nov 16 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/interview/">interview</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      LeetCode - Sort List
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <blockquote>
+<p>Sort List<br>Sort a linked list in O(n log n) time using constant space complexity.</p>
+</blockquote>
+<p>排序一个单向链表，要求时间复杂度O(nlgn)，空间复杂度O(1)。使用merge sort解该问题，网上的答案用的都是递归的解法，也就是top-down的实现，空间复杂度应该为O(lgn)，并不是常数，使用bottom-up的实现可以达到O(1)的空间复杂度。</p>
+<p><a href="http://en.wikipedia.org/wiki/Merge_sort" target="_blank" rel="noopener">wikipedia</a>只给出了数组的top-down &amp; bottom-up实现和list的top-down实现。<br>这里的快慢指针技巧非常有用：<a href="http://www.cnblogs.com/x1957/p/3492219.html" target="_blank" rel="noopener">link1</a> <a href="http://blog.csdn.net/jiadebin890724/article/details/21334059" target="_blank" rel="noopener">link2</a>。<br>链表的实现有带头节点和不带头节点两种形式，不带头节点的实现需要判断head==NULL的情况，带头节点则会浪费一个节点的空间。对于不带头节点的链表，各个操作可以用二级指针实现，把代码书写上的复杂度转移到coder的脑袋里。</p>
+<h3 id="Talk-is-cheap-show-you-the-code"><a href="#Talk-is-cheap-show-you-the-code" class="headerlink" title="Talk is cheap, show you the code:"></a>Talk is cheap, show you the code:</h3><p>两个bottom-up的实现，第一个空间复杂度O(n)，最多需要存储n/2个链表头指针。</p>
+<h4 id="Code-1"><a href="#Code-1" class="headerlink" title="Code 1."></a>Code 1.</h4><p>这里的queue使用list会超时。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * struct ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode *next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) : val(x), next(NULL) &#123;&#125;</span></span><br><span class="line"><span class="comment"> * &#125;;</span></span><br><span class="line"><span class="comment"> **/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;deque&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">ListNode *<span class="title">sortList</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (head == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;   </span><br><span class="line"></span><br><span class="line">        <span class="built_in">deque</span>&lt;ListNode*&gt; <span class="built_in">queue</span>;</span><br><span class="line">        ListNode* iter = head;</span><br><span class="line">        ListNode* next = <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">while</span> (iter != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="built_in">queue</span>.push_back(iter);</span><br><span class="line">            next = iter-&gt;next;</span><br><span class="line">            iter-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">            iter = next;</span><br><span class="line">        &#125;   </span><br><span class="line">        <span class="keyword">while</span> (<span class="built_in">queue</span>.size() &gt;= <span class="number">2</span>) &#123;</span><br><span class="line">            iter = <span class="built_in">queue</span>.front();</span><br><span class="line">            <span class="built_in">queue</span>.pop_front();</span><br><span class="line">            next = <span class="built_in">queue</span>.front();</span><br><span class="line">            <span class="built_in">queue</span>.pop_front();</span><br><span class="line">            <span class="built_in">queue</span>.push_back(mergeList(iter, next));</span><br><span class="line">        &#125;   </span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">queue</span>.front();   </span><br><span class="line">    &#125;   </span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function">ListNode* <span class="title">mergeList</span><span class="params">(ListNode* left, ListNode* right)</span> </span>&#123;</span><br><span class="line">        ListNode* merged_list = <span class="literal">NULL</span>;</span><br><span class="line">        ListNode** next_holder = &amp;merged_list;</span><br><span class="line">        ListNode* selected_node = <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">while</span>(left != <span class="literal">NULL</span> &amp;&amp; right != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (left-&gt;val &lt;= right-&gt;val) &#123;</span><br><span class="line">                selected_node = left;</span><br><span class="line">                left = left-&gt;next;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                selected_node = right;</span><br><span class="line">                right = right-&gt;next;</span><br><span class="line">            &#125;   </span><br><span class="line">            selected_node-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">            *next_holder = selected_node;</span><br><span class="line">            next_holder = &amp;(selected_node-&gt;next);</span><br><span class="line">        &#125;</span><br><span class="line">        *next_holder = left ? left : right;</span><br><span class="line">        <span class="keyword">return</span> merged_list;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h4 id="Code-2"><a href="#Code-2" class="headerlink" title="Code 2."></a>Code 2.</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">ListNode* <span class="title">sortList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//assert(head != NULL);</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> step = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> len = length(head);</span><br><span class="line">        ListNode* sorted_list = <span class="literal">NULL</span>;</span><br><span class="line">        ListNode** tail_holder = &amp;sorted_list;</span><br><span class="line">        <span class="keyword">while</span> (step &lt; len) &#123;</span><br><span class="line">            ListNode* left_head = <span class="literal">NULL</span>;</span><br><span class="line">            ListNode* left_tail = <span class="literal">NULL</span>;</span><br><span class="line">            ListNode* right_head = <span class="literal">NULL</span>;</span><br><span class="line">            ListNode* right_tail = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">            cutList(head, step, &amp;left_head, &amp;left_tail, &amp;head);</span><br><span class="line">            left_tail-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">            <span class="keyword">if</span> (head == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                *tail_holder = left_head;</span><br><span class="line">                <span class="keyword">goto</span> NEXT_LOOP;</span><br><span class="line">            &#125;   </span><br><span class="line"></span><br><span class="line">            cutList(head, step, &amp;right_head, &amp;right_tail, &amp;head);</span><br><span class="line">            right_tail-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">            *tail_holder = mergeList(left_head, right_head);</span><br><span class="line">            <span class="comment">//assert( (left_tail-&gt;next == NULL &amp;&amp; right_tail-&gt;next != NULL)</span></span><br><span class="line">            <span class="comment">//        || (left_tail-&gt;next != NULL &amp;&amp; right_tail-&gt;next == NULL));</span></span><br><span class="line">            <span class="keyword">if</span> (right_tail-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                tail_holder = &amp;(right_tail-&gt;next);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                tail_holder = &amp;(left_tail-&gt;next);</span><br><span class="line">            &#125;   </span><br><span class="line">NEXT_LOOP:</span><br><span class="line">            <span class="keyword">if</span> (head == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                head = sorted_list;</span><br><span class="line">                sorted_list = <span class="literal">NULL</span>;</span><br><span class="line">                tail_holder = &amp;sorted_list;</span><br><span class="line">                step *= <span class="number">2</span>;</span><br><span class="line">            &#125;   </span><br><span class="line">        &#125;   </span><br><span class="line">        <span class="keyword">return</span> head;</span><br><span class="line">    &#125;   </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">length</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> len = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (head != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            ++len;</span><br><span class="line">            head = head-&gt;next;</span><br><span class="line">        &#125;   </span><br><span class="line">        <span class="keyword">return</span> len;</span><br><span class="line">    &#125;   </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">cutList</span><span class="params">(ListNode* head, <span class="keyword">int</span> len,</span></span></span><br><span class="line"><span class="function"><span class="params">            ListNode** p_left_head, ListNode** p_left_tail, ListNode** p_right_head)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//assert(head != NULL);</span></span><br><span class="line"></span><br><span class="line">        *p_left_head = head;</span><br><span class="line">        *p_left_tail = head;</span><br><span class="line">        *p_right_head = head-&gt;next;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len &amp;&amp; head != <span class="literal">NULL</span>; ++i) &#123;</span><br><span class="line">            *p_left_tail = head;</span><br><span class="line">            *p_right_head = head-&gt;next;</span><br><span class="line">            head = head-&gt;next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">ListNode* <span class="title">mergeList</span><span class="params">(ListNode* left, ListNode* right)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//assert(left != NULL);</span></span><br><span class="line">        <span class="comment">//assert(right != NULL);</span></span><br><span class="line"></span><br><span class="line">        ListNode* merged_list = <span class="literal">NULL</span>;</span><br><span class="line">        ListNode** next_holder = &amp;merged_list;</span><br><span class="line">        ListNode* selected_node = <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">while</span>(left != <span class="literal">NULL</span> &amp;&amp; right != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (left-&gt;val &lt;= right-&gt;val) &#123;</span><br><span class="line">                selected_node = left;</span><br><span class="line">                left = left-&gt;next;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                selected_node = right;</span><br><span class="line">                right = right-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line">            selected_node-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">            *next_holder = selected_node;</span><br><span class="line">            next_holder = &amp;(selected_node-&gt;next);</span><br><span class="line">        &#125;</span><br><span class="line">        *next_holder = left ? left : right;</span><br><span class="line">        <span class="keyword">return</span> merged_list;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2014/11/16/leetcode-sort-list/" data-id="cjciuu7za000awks6xb8ha3gk" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2014/11/16/leetcode-sort-list/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/cpp/">cpp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/leetcode/">leetcode</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/list/">list</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/merge-sort/">merge-sort</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/sort/">sort</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/11/21/libchan-code-analysis/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          libchan实现分析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/11/15/cpp-vector-deque-stack/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">c++ vector和deque的区别</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Python/" style="font-size: 10px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 16.67px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 20px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2015/08/14/codis-network-archi/">Codis请求转发流程分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/27/b-tree-implement/">B-Tree实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/25/basic-aho-corasick-algorithm/">AC-Search实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/24/leetcode-combination-sum-ii/">LeetCode - Combination Sum II</a>
+          </li>
+        
+          <li>
+            <a href="/2015/01/06/the-obscure-in-python-thread/">Python线程的隐晦之处</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2014/11/16/leetcode-sort-list/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

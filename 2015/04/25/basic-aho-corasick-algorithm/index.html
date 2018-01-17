@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>AC-Search实现 | kmiku7&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="写了一遍多字符串匹配的ac-search算法，输出所有的原串匹配区间。   build_trie()构造一个trie，build_longest_trans_target()函数构造自动机无法前向匹配时的转移路径，即TrieNode::prefix字段。当自动机到达一个最终状态后(terminal state，TrieNode::pattern_end)构造原串当前位置之前的所有匹配区间，通过把p">
+<meta name="keywords" content="cpp,tree,trie,ac-search,algorithm,string-match,data-structure">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AC-Search实现">
+<meta property="og:url" content="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="写了一遍多字符串匹配的ac-search算法，输出所有的原串匹配区间。   build_trie()构造一个trie，build_longest_trans_target()函数构造自动机无法前向匹配时的转移路径，即TrieNode::prefix字段。当自动机到达一个最终状态后(terminal state，TrieNode::pattern_end)构造原串当前位置之前的所有匹配区间，通过把p">
+<meta property="og:updated_time" content="2018-01-17T08:59:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AC-Search实现">
+<meta name="twitter:description" content="写了一遍多字符串匹配的ac-search算法，输出所有的原串匹配区间。   build_trie()构造一个trie，build_longest_trans_target()函数构造自动机无法前向匹配时的转移路径，即TrieNode::prefix字段。当自动机到达一个最终状态后(terminal state，TrieNode::pattern_end)构造原串当前位置之前的所有匹配区间，通过把p">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-basic-aho-corasick-algorithm" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/04/25/basic-aho-corasick-algorithm/" class="article-date">
+  <time datetime="2015-04-25T13:19:50.000Z" itemprop="datePublished">Apr 25 2015</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/algorithm/">algorithm</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      AC-Search实现
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>写了一遍多字符串匹配的ac-search算法，输出所有的原串匹配区间。  </p>
+<p>build_trie()构造一个trie，build_longest_trans_target()函数构造自动机无法前向匹配时的转移路径，即TrieNode::prefix字段。当自动机到达一个最终状态后(terminal state，TrieNode::pattern_end)构造原串当前位置之前的所有匹配区间，通过把patterns串reverse之后构造出一个prefix树然后遍历实现。如果有更好的匹配串构造方法请留言。  </p>
+<p>原理请参考： &lt;Flexible Pattern Matching in Strings&gt;, 3.2.2 Basic Aho-Corasick Algorithm.</p>
+<h4 id="Trie-amp-reverse-patterns-之后的trie树和状态机构造代码"><a href="#Trie-amp-reverse-patterns-之后的trie树和状态机构造代码" class="headerlink" title="Trie &amp; reverse(patterns)之后的trie树和状态机构造代码"></a>Trie &amp; reverse(patterns)之后的trie树和状态机构造代码</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">TrieNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">TrieNode</span>* <span class="title">sibling</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">TrieNode</span>* <span class="title">children</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">TrieNode</span>* <span class="title">prefix</span>;</span></span><br><span class="line">    <span class="keyword">int</span> height; <span class="comment">// 1, 2, 3 ...</span></span><br><span class="line">    <span class="keyword">bool</span> pattern_end;</span><br><span class="line">    <span class="keyword">char</span> this_char;</span><br><span class="line">    TrieNode() : sibling(<span class="literal">nullptr</span>), children(<span class="literal">nullptr</span>), prefix(<span class="literal">nullptr</span>), </span><br><span class="line">            height(<span class="number">0</span>), pattern_end(<span class="literal">false</span>), this_char(<span class="number">0</span>) &#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function">TrieNode* <span class="title">get_node</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> TrieNode();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">release_node</span><span class="params">(TrieNode* node)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">delete</span> node;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">free_trie</span><span class="params">(TrieNode* root)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">vector</span>&lt;TrieNode*&gt; <span class="built_in">stack</span>;</span><br><span class="line">    <span class="built_in">stack</span>.push_back(root);</span><br><span class="line">    <span class="keyword">while</span>(!<span class="built_in">stack</span>.empty())&#123;</span><br><span class="line">        root = <span class="built_in">stack</span>.back();</span><br><span class="line">        <span class="keyword">if</span>(root==<span class="literal">nullptr</span>) &#123;</span><br><span class="line">            <span class="built_in">stack</span>.pop_back();</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">stack</span>.back() = root-&gt;sibling;</span><br><span class="line">        <span class="built_in">stack</span>.push_back(root-&gt;children);</span><br><span class="line">        release_node(root);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// assumption: there are no duplicate item and no empty string in strs.</span></span><br><span class="line"><span class="function">TrieNode* <span class="title">build_trie</span><span class="params">(<span class="keyword">const</span> <span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt;&amp; strs)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// build root;</span></span><br><span class="line">    TrieNode* root = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">auto</span> &amp;str : strs) &#123;</span><br><span class="line">        <span class="keyword">int</span> len = <span class="number">0</span>;</span><br><span class="line">        TrieNode** insert_pos = &amp;root;</span><br><span class="line">        TrieNode* parent_node = <span class="literal">nullptr</span>;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">auto</span> curr_char : str) &#123;</span><br><span class="line">            <span class="comment">// find insert pos</span></span><br><span class="line">            len += <span class="number">1</span>;</span><br><span class="line">            <span class="keyword">while</span>(*insert_pos!=<span class="literal">nullptr</span> &amp;&amp; (*insert_pos)-&gt;this_char&lt;curr_char)</span><br><span class="line">                insert_pos = &amp;(*insert_pos)-&gt;sibling;</span><br><span class="line"></span><br><span class="line">            parent_node = *insert_pos;</span><br><span class="line">            <span class="comment">// new char, insert</span></span><br><span class="line">            <span class="keyword">if</span>(*insert_pos==<span class="literal">nullptr</span> || (*insert_pos)-&gt;this_char&gt;curr_char) &#123;</span><br><span class="line">                parent_node = get_node();</span><br><span class="line">                parent_node-&gt;sibling = *insert_pos;</span><br><span class="line">                parent_node-&gt;this_char = curr_char;</span><br><span class="line">                parent_node-&gt;height = len;</span><br><span class="line">                *insert_pos = parent_node;</span><br><span class="line">            &#125;</span><br><span class="line">            insert_pos = &amp;parent_node-&gt;children;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// no duplicate</span></span><br><span class="line">        assert(parent_node &amp;&amp; parent_node-&gt;pattern_end==<span class="literal">false</span>);</span><br><span class="line">        parent_node-&gt;pattern_end = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> root;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 忽略这个名字吧。。</span></span><br><span class="line"><span class="function">TrieNode* <span class="title">build_suffix</span><span class="params">(<span class="keyword">const</span> <span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt;&amp; strs)</span> </span>&#123;</span><br><span class="line">    TrieNode* root = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">auto</span> &amp;str : strs) &#123;</span><br><span class="line">        TrieNode** insert_pos = &amp;root;</span><br><span class="line">        TrieNode* parent_node = <span class="literal">nullptr</span>;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;str.size(); ++i) &#123;</span><br><span class="line">            <span class="keyword">char</span> curr_char = str[str.size()<span class="number">-1</span>-i];</span><br><span class="line">            <span class="keyword">while</span>(*insert_pos!=<span class="literal">nullptr</span> &amp;&amp; (*insert_pos)-&gt;this_char&lt;curr_char)</span><br><span class="line">                insert_pos = &amp;(*insert_pos)-&gt;sibling;</span><br><span class="line"></span><br><span class="line">            parent_node = *insert_pos;</span><br><span class="line">            <span class="keyword">if</span>(*insert_pos==<span class="literal">nullptr</span> || (*insert_pos)-&gt;this_char&gt;curr_char) &#123;</span><br><span class="line">                parent_node = get_node();</span><br><span class="line">                parent_node-&gt;sibling = *insert_pos;</span><br><span class="line">                parent_node-&gt;this_char = curr_char;</span><br><span class="line">                parent_node-&gt;height = i+<span class="number">1</span>;</span><br><span class="line">                *insert_pos = parent_node;</span><br><span class="line">            &#125;</span><br><span class="line">            insert_pos = &amp;parent_node-&gt;children;</span><br><span class="line">        &#125;</span><br><span class="line">        assert(parent_node &amp;&amp; parent_node-&gt;pattern_end==<span class="literal">false</span>);</span><br><span class="line">        parent_node-&gt;pattern_end = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> root;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">TrieNode* <span class="title">list_search</span><span class="params">(TrieNode* list_head, <span class="keyword">char</span> target)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span>(list_head &amp;&amp; list_head-&gt;this_char!=target)</span><br><span class="line">        list_head = list_head-&gt;sibling;</span><br><span class="line">    <span class="keyword">return</span> list_head;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">build_longest_trans_target</span><span class="params">(TrieNode* root)</span> </span>&#123;</span><br><span class="line">    assert(root!=<span class="literal">nullptr</span>);</span><br><span class="line">    <span class="built_in">vector</span>&lt;TrieNode*&gt; <span class="built_in">stack</span>;</span><br><span class="line">    TrieNode* current = root;</span><br><span class="line">    <span class="keyword">while</span>(current) &#123;</span><br><span class="line">        <span class="built_in">stack</span>.push_back(current);</span><br><span class="line">        current = current-&gt;sibling;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// bfs可以正确传递pattern_end标志, 但是需要使用queue实现。</span></span><br><span class="line">    <span class="comment">// 此处dfs。</span></span><br><span class="line">    <span class="keyword">while</span>(!<span class="built_in">stack</span>.empty())&#123;</span><br><span class="line">        current = <span class="built_in">stack</span>.back();</span><br><span class="line">        <span class="built_in">stack</span>.pop_back();</span><br><span class="line">        TrieNode* children = current-&gt;children;</span><br><span class="line">        <span class="keyword">while</span>(children) &#123;</span><br><span class="line">            TrieNode* candidate = current-&gt;prefix;</span><br><span class="line">            <span class="keyword">while</span>(candidate &amp;&amp; children-&gt;prefix==<span class="literal">nullptr</span>) &#123;</span><br><span class="line">                children-&gt;prefix = list_search(candidate-&gt;children, children-&gt;this_char);</span><br><span class="line">                candidate = candidate-&gt;prefix;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span>(children-&gt;prefix==<span class="literal">nullptr</span>)</span><br><span class="line">                children-&gt;prefix = list_search(root, children-&gt;this_char);</span><br><span class="line">            assert(children-&gt;prefix!=children);</span><br><span class="line">            <span class="built_in">stack</span>.push_back(children);</span><br><span class="line">            TrieNode* prefix = children-&gt;prefix;</span><br><span class="line">            <span class="keyword">bool</span> pattern_end = children-&gt;pattern_end;</span><br><span class="line">            <span class="keyword">while</span>(prefix &amp;&amp; !pattern_end) &#123;</span><br><span class="line">                pattern_end = pattern_end || prefix-&gt;pattern_end;</span><br><span class="line">                prefix = prefix-&gt;prefix;</span><br><span class="line">            &#125;</span><br><span class="line">            children-&gt;pattern_end = pattern_end;</span><br><span class="line">            children = children-&gt;sibling;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">print_tree</span><span class="params">(TrieNode* root, <span class="keyword">bool</span> newline=<span class="literal">true</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span>(root) &#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"("</span> &lt;&lt; root-&gt;this_char &lt;&lt; <span class="string">","</span> &lt;&lt; root-&gt;height &lt;&lt; <span class="string">","</span> </span><br><span class="line">            &lt;&lt; root-&gt;pattern_end &lt;&lt; <span class="string">") "</span>;</span><br><span class="line">        print_tree(root-&gt;children, <span class="literal">false</span>);</span><br><span class="line">        root = root-&gt;sibling;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(newline) <span class="built_in">cout</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="ac-search-amp-test"><a href="#ac-search-amp-test" class="headerlink" title="ac-search &amp; test"></a>ac-search &amp; test</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">fill_pattern_occurrence</span><span class="params">(TrieNode* suffix, <span class="keyword">const</span> <span class="built_in">string</span>&amp; haystack, <span class="keyword">int</span> pos, </span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="built_in">vector</span>&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt;&amp; result)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=pos; i&gt;=<span class="number">0</span> &amp;&amp; suffix; --i) &#123;</span><br><span class="line">        <span class="keyword">char</span> curr_char = haystack[i];</span><br><span class="line">        suffix = list_search(suffix, curr_char);</span><br><span class="line">        <span class="keyword">if</span>(suffix-&gt;pattern_end) &#123;</span><br><span class="line">            <span class="comment">// [i, pos+1) ~ [i, pos]</span></span><br><span class="line">            result.push_back(make_pair(i, pos+<span class="number">1</span>));</span><br><span class="line">        &#125;</span><br><span class="line">        suffix = suffix-&gt;children;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// [begin_pos, end_pos)</span></span><br><span class="line"><span class="built_in">vector</span>&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; ac_search(TrieNode* root, TrieNode* suffix, <span class="keyword">const</span> <span class="built_in">string</span>&amp; haystack) &#123;</span><br><span class="line">    assert(root!=<span class="literal">nullptr</span>);</span><br><span class="line">    assert(suffix!=<span class="literal">nullptr</span>);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">vector</span>&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; result;</span><br><span class="line">    TrieNode* prev_matched = <span class="literal">nullptr</span>;</span><br><span class="line">    TrieNode* curr_matched = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;haystack.size(); ++i) &#123;</span><br><span class="line">        <span class="keyword">char</span> curr_char = haystack[i];</span><br><span class="line">        <span class="keyword">while</span>(prev_matched &amp;&amp; !curr_matched) &#123;</span><br><span class="line">            curr_matched = list_search(prev_matched-&gt;children, curr_char);</span><br><span class="line">            prev_matched = prev_matched-&gt;prefix;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(curr_matched==<span class="literal">nullptr</span>)</span><br><span class="line">            curr_matched = list_search(root, curr_char);</span><br><span class="line">        <span class="keyword">if</span>(curr_matched &amp;&amp; curr_matched-&gt;pattern_end) &#123;</span><br><span class="line">            fill_pattern_occurrence(suffix, haystack, i, result);</span><br><span class="line">        &#125;</span><br><span class="line">        prev_matched = curr_matched;</span><br><span class="line">        curr_matched = <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>** argv)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt; patterns = &#123;</span><br><span class="line">        <span class="string">"announce"</span>,</span><br><span class="line">        <span class="string">"annual"</span>,</span><br><span class="line">        <span class="string">"annually"</span>,</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="built_in">string</span> haystack = <span class="string">"annual_announce"</span>;</span><br><span class="line"></span><br><span class="line">    TrieNode* prefix = build_trie(patterns);</span><br><span class="line">    build_longest_trans_target(prefix);</span><br><span class="line">    TrieNode* suffix = build_suffix(patterns);</span><br><span class="line"></span><br><span class="line">    print_tree(prefix);</span><br><span class="line">    print_tree(suffix);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> result = ac_search(prefix, suffix, haystack);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">auto</span>&amp; item : result) &#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; item.first &lt;&lt; <span class="string">", "</span> &lt;&lt; item.second &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    free_trie(prefix);</span><br><span class="line">    free_trie(suffix);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>完整代码：<a href="https://github.com/kmiku7/algorithms/blob/master/basic_ac_algorithm/main.cpp" target="_blank" rel="noopener">github</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/" data-id="cjciuu7yd0000wks61k3mt6jz" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ac-search/">ac-search</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/algorithm/">algorithm</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/cpp/">cpp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/data-structure/">data-structure</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/string-match/">string-match</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/tree/">tree</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/trie/">trie</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/04/27/b-tree-implement/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          B-Tree实现
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/04/24/leetcode-combination-sum-ii/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">LeetCode - Combination Sum II</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Python/" style="font-size: 10px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 16.67px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 20px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2015/08/14/codis-network-archi/">Codis请求转发流程分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/27/b-tree-implement/">B-Tree实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/25/basic-aho-corasick-algorithm/">AC-Search实现</a>
+          </li>
+        
+          <li>
+            <a href="/2015/04/24/leetcode-combination-sum-ii/">LeetCode - Combination Sum II</a>
+          </li>
+        
+          <li>
+            <a href="/2015/01/06/the-obscure-in-python-thread/">Python线程的隐晦之处</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
