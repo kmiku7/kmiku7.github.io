@@ -6,7 +6,7 @@
   <title>Codis请求转发流程分析 | kmiku7&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="本文是的一篇 Codis 代码阅读笔记，涉及的是 codis-proxy 从接收 client 请求，转发给 redis(codis-server)，然后返回给 client 的过程。Codis 代码开始阅读的是重构后的2.0版本，流程比较清晰高效，后来需要了解公司对 Codis 的使用修改情况，而线上系统是基于1.8的，这个版本的请求解析转发流程则有点晦涩，所以把分析结果记录下来，也作为 gol">
-<meta name="keywords" content="golang,code-analysis,codis,redis,proxy">
+<meta name="keywords" content="code-analysis,golang,codis,redis,proxy">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Codis请求转发流程分析">
 <meta property="og:url" content="http://kmiku7.github.io/2015/08/14/codis-network-archi/index.html">
@@ -125,7 +125,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/08/14/codis-network-archi/" data-id="cjd5ijnqd0005zhs60hppo3as" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/08/14/codis-network-archi/" data-id="cjd5l03510009gps6tzryn8s5" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/08/14/codis-network-archi/#disqus_thread" class="article-comment-link">Comments</a>
       
