@@ -90,7 +90,7 @@ ga('send', 'pageview');
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve the problem of uwsgi &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
+      <a class="article-title" href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
     </h1>
   
 
@@ -99,7 +99,7 @@ ga('send', 'pageview');
     <div class="article-entry" itemprop="articleBody">
       
         <p>Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes.</p>
-<p>When I use <code>python manager.py runserver</code> to test service, there are no problem. But when use nginx + uwsgi to support service, I can’t get the complete response at the client side. At the same time, there is an error log in uwsgi.log and a regular log notice that uswgi has finished request processing:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Fri Feb  88 88:88:88 2088 - uwsgi_response_write_body_do() TIMEOUT !!!</span><br><span class="line">OSError: write error</span><br><span class="line">GET REQUEST-URL =&gt; generated 8888888888 bytes in 8888 msecs (HTTP/1.1 200) 8 headers in 888 bytes</span><br></pre></td></tr></table></figure></p>
+<p>When I use <code>python manage.py runserver</code> to test service, there are no problem. But when use nginx + uwsgi to support service, I can’t get the complete response at the client side. At the same time, there is an error log in uwsgi.log and a regular log notice that uswgi has finished request processing:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Fri Feb  88 88:88:88 2088 - uwsgi_response_write_body_do() TIMEOUT !!!</span><br><span class="line">OSError: write error</span><br><span class="line">GET REQUEST-URL =&gt; generated 8888888888 bytes in 8888 msecs (HTTP/1.1 200) 8 headers in 888 bytes</span><br></pre></td></tr></table></figure></p>
 <p>When uwsgi outputs these logs, the client still receives response data until the size of received equal to the generated size output in server log. So I think there is a large buffer in Nginx. Uwsgi writes response to Nginx actively and the speed is very fast because they are in same machine. But Nginx writes response to client is slow. If Nginx stores response data in buffer, uwsgi’s write request will block when buffer is full. If buffer size is very large, uwsgi will wait a long time before Nginx clears it and write request timeout.<br>Only in this way the Nginx can still write data to client when uwsgi finishs processing and close response stream.</p>
 <p>According to <a href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html#uwsgi_buffering" target="_blank" rel="noopener">ngx_http_uwsgi_module’s document</a>:</p>
 <blockquote>
@@ -113,7 +113,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjd5i7vge0001dxs6m964ymzg" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjd5ijnpj0000zhs6hzln2y0i" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -176,7 +176,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/08/14/codis-network-archi/" data-id="cjd5i7vgu0005dxs69wvzzsw0" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/08/14/codis-network-archi/" data-id="cjd5ijnqd0005zhs60hppo3as" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/08/14/codis-network-archi/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -227,7 +227,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/04/27/b-tree-implement/" data-id="cjd5i7vgr0004dxs65syle96r" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/04/27/b-tree-implement/" data-id="cjd5ijnpo0001zhs6tynuqe41" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/04/27/b-tree-implement/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -278,7 +278,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/" data-id="cjd5i7vg90000dxs6cgrwsv74" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/" data-id="cjd5ijnpw0004zhs6mz00ujzx" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -331,7 +331,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/04/24/leetcode-combination-sum-ii/" data-id="cjd5i7vh8000fdxs678rlotmb" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/04/24/leetcode-combination-sum-ii/" data-id="cjd5ijnqm000azhs6upr5wp7q" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/04/24/leetcode-combination-sum-ii/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -398,7 +398,7 @@ ga('send', 'pageview');
       <ul>
         
           <li>
-            <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve the problem of uwsgi &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
+            <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
           </li>
         
           <li>
