@@ -12,7 +12,7 @@
 <meta property="og:url" content="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/index.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
 <meta property="og:description" content="Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes. When I use python manager.py runserver to test service, there are no pro">
-<meta property="og:updated_time" content="2018-02-02T05:42:29.000Z">
+<meta property="og:updated_time" content="2018-02-02T05:50:54.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Solve the problem of uwsgi &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error">
 <meta name="twitter:description" content="Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes. When I use python manager.py runserver to test service, there are no pro">
@@ -103,20 +103,20 @@ ga('send', 'pageview');
       
         <p>Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes.</p>
 <p>When I use <code>python manager.py runserver</code> to test service, there are no problem. But when use nginx + uwsgi to support service, I can’t get the complete response at the client side. At the same time, there is an error log in uwsgi.log and a regular log notice that uswgi has finished request processing:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Fri Feb  88 88:88:88 2088 - uwsgi_response_write_body_do() TIMEOUT !!!</span><br><span class="line">OSError: write error</span><br><span class="line">GET REQUEST-URL =&gt; generated 8888888888 bytes in 8888 msecs (HTTP/1.1 200) 8 headers in 888 bytes</span><br></pre></td></tr></table></figure></p>
-<p>When uwsgi outputs these logs, the client still receives response data until the size of received equal to the generated size output in server log. So I think there is a large buffer in Nginx. Uwsgi writes response to Nginx actively and the speed is very fast because they are in same machine. But Nginx writes response to client is slow. If Nginx stores response data in buffer, uwsgi’s write request will block when buffer is full. If buffer size is very large, uwsgi will wait a long time before Nginx clears it and write request timeout.</p>
-<p>Only in this way the Nginx can still write data to client when uwsgi finishs processing and close response stream.</p>
-<p>According to <a href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html#uwsgi_buffering" target="_blank" rel="noopener">ngx_http_uwsgi_module’s document</a>:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">When buffering is enabled, nginx receives a response from the uwsgi server as soon as possible, saving it into the buffers set by the uwsgi_buffer_size and uwsgi_buffers directives. If the whole response does not fit into memory, a part of it can be saved to a temporary file on the disk. Writing to temporary files is controlled by the uwsgi_max_temp_file_size and uwsgi_temp_file_write_size directives.</span><br></pre></td></tr></table></figure></p>
+<p>When uwsgi outputs these logs, the client still receives response data until the size of received equal to the generated size output in server log. So I think there is a large buffer in Nginx. Uwsgi writes response to Nginx actively and the speed is very fast because they are in same machine. But Nginx writes response to client is slow. If Nginx stores response data in buffer, uwsgi’s write request will block when buffer is full. If buffer size is very large, uwsgi will wait a long time before Nginx clears it and write request timeout.<br>Only in this way the Nginx can still write data to client when uwsgi finishs processing and close response stream.</p>
+<p>According to <a href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html#uwsgi_buffering" target="_blank" rel="noopener">ngx_http_uwsgi_module’s document</a>:</p>
+<blockquote>
+<p>When buffering is enabled, nginx receives a response from the uwsgi server as soon as possible, saving it into the buffers set by the uwsgi_buffer_size and uwsgi_buffers directives. If the whole response does not fit into memory, a part of it can be saved to a temporary file on the disk. Writing to temporary files is controlled by the uwsgi_max_temp_file_size and uwsgi_temp_file_write_size directives.</p>
+</blockquote>
 <p>There are memory buffers and temporary file buffers. The default size of memory buffers is only a few kilobytes. But the default max size of temporary file buffers is 1024MB, which is approximately equal to the generated size in uwsgi log.</p>
 <p><strong>In order to solve this problem, we can just disable temporary file buffers, use the directive <code>uwsgi_max_temp_file_size 0;</code>. </strong></p>
-<p>A memory buffer of a few kilobytes is ok because it will not block uwsgi’ write request much time.</p>
-<p>As the previous analysis, if the transmission speed between Nginx and client side is far slower to the speed between Nginx and uswgi, the problem will come up no matter how smaller the buffer is.</p>
-<p>As the implementation of Django and uwsgi, uwsgi read a block of data and write to response stream, if the block size is large enough and the transmission speed to the client side is slow enough, the problem will come up even all buffers in Nginx disabled. Because the block can be considered as a different form of buffer.</p>
+<p>A memory buffer of a few kilobytes is ok because it will not block uwsgi’ write request much time.<br>But as the previous analysis, if the transmission speed between Nginx and client side is far slower to the speed between Nginx and uswgi, the problem will come up no matter how smaller the buffer is.<br>As the implementation of Django and uwsgi, uwsgi read a block of data and write to response stream, if the block size is large enough and the transmission speed to the client side is slow enough, the problem will come up even all buffers in Nginx disabled. Because the block can be considered as a different form of buffer.</p>
 <p>So slower transmission speed to client side means the smaller size of buffer we can use.<br>And we don’t know user’s network conditions, what we can do is only disalbe buffers.</p>
 
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjd5i7bcy0001cps6uhxver2h" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjd5i7vge0001dxs6m964ymzg" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/#disqus_thread" class="article-comment-link">Comments</a>
       
