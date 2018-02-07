@@ -98,24 +98,22 @@ ga('send', 'pageview');
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>###python manage.py runserver 启动方式</p>
-<p>该命令执行的 django/core/management/commands/runserver.py 中的代码，通过调用链：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">execute()/BaseCommand::execute() -&gt; handle() -&gt; run() -&gt; inner_run() -&gt; get_handler() -&gt; get_internal_wsgi_application()</span><br></pre></td></tr></table></figure></p>
+        <h3 id="python-manage-py-runserver-启动方式"><a href="#python-manage-py-runserver-启动方式" class="headerlink" title="python manage.py runserver 启动方式"></a>python manage.py runserver 启动方式</h3><p>该命令执行的 django/core/management/commands/runserver.py 中的代码，通过调用链：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">execute()</span><br><span class="line">    -&gt; BaseCommand::execute()</span><br><span class="line">    -&gt; handle() </span><br><span class="line">    -&gt; run() </span><br><span class="line">    -&gt; inner_run() </span><br><span class="line">    -&gt; get_handler() </span><br><span class="line">    -&gt; django.core.servers.basehttp.get_internal_wsgi_application()</span><br></pre></td></tr></table></figure></p>
 <p>获取一个 WSGI application object。</p>
-<p>get_internal_wsgi_application() 默认调用 django.core.wsgi.get_wsgi_application()，该函数首先读取WSGI_APPLICATION参数获取一个wsgi application object对象。</p>
+<p>get_internal_wsgi_application() 默认调用 django.core.wsgi.get_wsgi_application()，该函数首先读取settings.WSGI_APPLICATION参数获取一个wsgi application object对象。</p>
 <p>WSGI_APPLICATION参数设置方式参考：</p>
 <blockquote>
 <p>By default, it’s set to <project_name>.wsgi.application, which points to the application callable in <project_name>/wsgi.py.</project_name></project_name></p>
 </blockquote>
 <p>如果该参数没有设置，则调用 <strong>django.core.wsgi.get_wsgi_application()</strong>，返回django.core.handers.wsgi.WSGIHandler类的实例。</p>
-<p>###使用uwsgi启动</p>
-<p>当使用 django-admin startproject ProjectName 创建新app后，会生成 ProjectName/wsgi.py 文件，该文件默认也使用 <strong>django.core.wsgi.get_wsgi_application()</strong> 获取一个application object。 </p>
+<h3 id="使用uwsgi启动"><a href="#使用uwsgi启动" class="headerlink" title="使用uwsgi启动"></a>使用uwsgi启动</h3><p>当使用 django-admin startproject ProjectName 创建新app后，会生成 ProjectName/wsgi.py 文件，该文件默认也使用 <strong>django.core.wsgi.get_wsgi_application()</strong> 获取一个application object。 </p>
 <p>refference:<br><a href="http://uwsgi-docs.readthedocs.io/en/latest/Python.html" target="_blank" rel="noopener">http://uwsgi-docs.readthedocs.io/en/latest/Python.html</a></p>
 <p>因此二者默认情况下是一样的。但是个性化配置方式不同。</p>
 
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" data-id="cjdcqjp8m000cpis6a3jqhymp" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" data-id="cjdcqjy620009qcs6dok2lixu" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -171,7 +169,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjdcqjp7b0000pis6fimsqj5o" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjdcqjy5l0000qcs6a19hh954" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -234,7 +232,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/08/14/codis-network-archi/" data-id="cjdcqjp8y000qpis6yw20pqqc" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/08/14/codis-network-archi/" data-id="cjdcqjy5y0005qcs68u4xkoej" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/08/14/codis-network-archi/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -285,7 +283,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/04/27/b-tree-implement/" data-id="cjdcqjp8k000bpis69kn5awr5" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/04/27/b-tree-implement/" data-id="cjdcqjy5r0001qcs68q60ngr8" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/04/27/b-tree-implement/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -336,7 +334,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/" data-id="cjdcqjp8r000gpis6uycpt91x" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/" data-id="cjdcqjy5w0004qcs6fybjzfiz" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2015/04/25/basic-aho-corasick-algorithm/#disqus_thread" class="article-comment-link">Comments</a>
       
