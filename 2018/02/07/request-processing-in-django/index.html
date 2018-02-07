@@ -3,14 +3,19 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Archives | kmiku7&#39;s blog</title>
+  <title>request processing in Django | kmiku7&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="kmiku7&#39;s blog">
-<meta property="og:url" content="http://kmiku7.github.io/archives/index.html">
+  <meta name="description" content="最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。 这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落">
+<meta name="keywords" content="Python,Django">
+<meta property="og:type" content="article">
+<meta property="og:title" content="request processing in Django">
+<meta property="og:url" content="http://kmiku7.github.io/2018/02/07/request-processing-in-django/index.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。 这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落">
+<meta property="og:updated_time" content="2018-02-07T10:59:29.818Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="kmiku7&#39;s blog">
+<meta name="twitter:title" content="request processing in Django">
+<meta name="twitter:description" content="最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。 这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落">
   
   
     <link rel="icon" href="/img/favicon.ico">
@@ -70,268 +75,82 @@ ga('send', 'pageview');
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-  
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/07/request-processing-in-django/" class="archive-article-date">
-  <time datetime="2018-02-07T07:51:44.000Z" itemprop="datePublished">Feb 7</time>
+        <section id="main"><article id="post-request-processing-in-django" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/07/request-processing-in-django/" class="article-date">
+  <time datetime="2018-02-07T07:51:44.000Z" itemprop="datePublished">Feb 7 2018</time>
 </a>
-      
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/07/request-processing-in-django/">request processing in Django</a>
+    <h1 class="article-title" itemprop="name">
+      request processing in Django
     </h1>
   
 
-    </header>
-  </div>
-</article>
-  
+      </header>
     
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" class="archive-article-date">
-  <time datetime="2018-02-07T07:03:05.000Z" itemprop="datePublished">Feb 7</time>
-</a>
+    <div class="article-entry" itemprop="articleBody">
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/">difference between &#39;manage.py runserver&#39; and uswgi</a>
-    </h1>
-  
+        <p>最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。</p>
+<p>这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落盘导致的开销。<br>文章中的代码片段并没有遵守python语法，为了描述的简洁混杂了c++的语法。</p>
+<p>django code version: 1.11.3</p>
+<h1 id="Request"><a href="#Request" class="headerlink" title="Request"></a>Request</h1><p>默认构造一个WSGIRequest对象。<a href="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/">ref</a><br>解析请求参数过程使用了lazy loading方式，GET &amp; POST字段都是property。<br>GET是每次都解析 <code>self.environ[‘QUERY_STRING’]</code> 参数。<br>POST或FILES是其中一个首次使用时（即_post, _files字段为空），调用父类的 <code>_load_post_and_files()</code> 函数，该函数解析post方式的数据，并设置 _post, _files 两个字段，此时POST &amp; FILES都处于直接可用的状态。</p>
+<h3 id="load-post-and-files-函数分析"><a href="#load-post-and-files-函数分析" class="headerlink" title="_load_post_and_files() 函数分析"></a>_load_post_and_files() 函数分析</h3><p>忽略异常判断逻辑。<br>代码只支持 &#39;multipart/form-data&#39; &amp; &#39;application/x-www-form-urlencoded&#39; 两种POST数据编码方式。使用其他方式不会报错，仅仅是 POST &amp; FILES 为空。<br>根据<code>WSGIRequest::__init__()</code>，post entity-body数据流保存在_stream字段，并未读取。</p>
+<h4 id="39-application-x-www-form-urlencoded-39-数据解析"><a href="#39-application-x-www-form-urlencoded-39-数据解析" class="headerlink" title="&#39;application/x-www-form-urlencoded&#39; 数据解析"></a>&#39;application/x-www-form-urlencoded&#39; 数据解析</h4><p>一次性读取出所有的entity-body数据，并赋值给_body字段，然后解码。<br>这种方式是只能传递form参数，不能上传文件。<br>同时这种方式可以通过 <code>settings.DATA_UPLOAD_MAX_MEMORY_SIZE</code> 设置数据大小上限。</p>
+<h4 id="39-multipart-form-data-39-数据解析"><a href="#39-multipart-form-data-39-数据解析" class="headerlink" title="&#39;multipart/form-data&#39; 数据解析"></a>&#39;multipart/form-data&#39; 数据解析</h4><p>首先判断数据源，如果有_body字段则使用该字段的数据，并封装出来readable object，即有read()函数。<br>如果没有则使用self，self提供了read()函数读取self._stream数据。<br>然后使用 <code>parse_file_upload()</code> 函数解析数据，该函数同时解析出来 POST &amp; FILES参数，不要被函数名误导。该函数使用<code>django.http.multipartparser.MultiPartParser</code>类解析。</p>
+<p>此处上传数据有两种：请求字段，文件。<br>对于上传的普通字段，可以通过 <code>settings.DATA_UPLOAD_MAX_NUMBER_FIELDS</code> 限制上传的字段个数，不包含文件个数，以及通过 <code>settings.DATA_UPLOAD_MAX_MEMORY_SIZE</code> 限制字段值长度和的上限，不包括文件大小。</p>
+<p>对于上传的文件，<code>MultiPartParser class</code>本身没有具体的逻辑，而是提供了一套处理机制，由提供的实现 <code>class FileUploadHandler</code> 的类完成处理。可以提供多个handler，通过参数 <code>settings.FILE_UPLOAD_HANDLERS</code> 配置，有默认值。<a href="https://docs.djangoproject.com/en/1.11/topics/http/file-uploads/#upload-handlers" target="_blank" rel="noopener">ref</a><br>MultiPartParser循环读取上传文件的每个chunk，然后循环调用每个handlers处理当前chunk。每个handlers最后返回一个Filelike object，因此理论上上传一个文件，server端会产生len(handlers)个文件对象，但是我们通过FILES[FILENAME]只会返回一个object，这是因为FILES是 <code>django.utils.datastructures.MultiValueDict</code> 类型，接口类似dict，但是逻辑不同，参考代码：<a href="https://docs.djangoproject.com/en/1.11/_modules/django/utils/datastructures/" target="_blank" rel="noopener">link</a>。<br>GET &amp; POST 类型为 <code>class QueryDict(MultiValueDict)</code>，集成增加了 mutable 开关。</p>
+<p>看到这里我们知道file upload handler的设置是全局的，如果想针对某个接口做定制化的配置并不能直接达到目的。那么如果在业务代码收到request object时设置 <code>http.HttpRequest::upload_handlers</code> 字段也是可以的，只要代码中的middlewares，或其他部分没有使用过POST或FILES参数。<br>在某一个时间点上是可以做到的，但是随着项目迭代这种约定很容易被破坏。</p>
+<h1 id="Process"><a href="#Process" class="headerlink" title="Process"></a>Process</h1><p>接下来通过<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">response = WSGIHandler::BaseHandler.get_response(request)</span><br></pre></td></tr></table></figure></p>
+<p>进入处理流程。</p>
+<p>get_response() 主要逻辑就是调用 middleware_chain。<code>settings.MIDDLEWARE</code> 是按顺序执行的，不要被初始化时的 <code>reversed(settings.MIDDLEWARE)</code> 操作混淆。<br>初始化middleware_chain时首先会插入 <code>BaseHandler::_get_response()</code>， 该函数在调用链中最后执行，也就是在该函数里走入url dispatch逻辑，并获取业务代码产生的response object。</p>
+<p><code>settings.ROOT_URLCONF</code> 配置了 url dispatch patterns。</p>
+<h1 id="Response"><a href="#Response" class="headerlink" title="Response"></a>Response</h1><h2 id="python-manage-py-runserver-方式启动"><a href="#python-manage-py-runserver-方式启动" class="headerlink" title="python manage.py runserver 方式启动"></a>python manage.py runserver 方式启动</h2><p>server实现为 <code>django.core.servers.basehttp.WSGIServer</code> 类，该类继承自python标准库的类：<code>wsgiref.simple_server.WSGIServer(server_address, RequestHandlerClass)</code><br>manual: <a href="https://docs.python.org/3.6/library/wsgiref.html?highlight=simple_server#wsgiref.simple_server.WSGIServer" target="_blank" rel="noopener">link</a>。</p>
+<h2 id="uWSGI-方式启动"><a href="#uWSGI-方式启动" class="headerlink" title="uWSGI 方式启动"></a>uWSGI 方式启动</h2>
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjdcsa9d3003g23s6dhwbod9w" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/02/07/request-processing-in-django/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Django/">Django</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li></ul>
 
-    </header>
+    </footer>
   </div>
-</article>
   
     
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" class="archive-article-date">
-  <time datetime="2018-02-02T04:05:15.000Z" itemprop="datePublished">Feb 2</time>
-</a>
-      
+<nav id="article-nav">
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
-    </h1>
   
+    <a href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">difference between &#39;manage.py runserver&#39; and uswgi</div>
+    </a>
+  
+</nav>
 
-    </header>
-  </div>
+  
 </article>
-  
-    
-    
-      
-        </div></section>
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2015" class="archive-year">2015</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/08/14/codis-network-archi/" class="archive-article-date">
-  <time datetime="2015-08-14T13:07:59.000Z" itemprop="datePublished">Aug 14</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/08/14/codis-network-archi/">Codis请求转发流程分析</a>
-    </h1>
-  
 
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/04/27/b-tree-implement/" class="archive-article-date">
-  <time datetime="2015-04-27T14:52:33.000Z" itemprop="datePublished">Apr 27</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/04/27/b-tree-implement/">B-Tree实现</a>
-    </h1>
-  
 
-    </header>
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/04/25/basic-aho-corasick-algorithm/" class="archive-article-date">
-  <time datetime="2015-04-25T13:19:50.000Z" itemprop="datePublished">Apr 25</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/04/25/basic-aho-corasick-algorithm/">AC-Search实现</a>
-    </h1>
-  
+</section>
 
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/04/24/leetcode-combination-sum-ii/" class="archive-article-date">
-  <time datetime="2015-04-24T08:20:37.000Z" itemprop="datePublished">Apr 24</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/04/24/leetcode-combination-sum-ii/">LeetCode - Combination Sum II</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/01/06/the-obscure-in-python-thread/" class="archive-article-date">
-  <time datetime="2015-01-05T16:10:41.000Z" itemprop="datePublished">Jan 6</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/01/06/the-obscure-in-python-thread/">Python线程的隐晦之处</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-      
-        </div></section>
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2014" class="archive-year">2014</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2014/11/21/libchan-code-analysis/" class="archive-article-date">
-  <time datetime="2014-11-21T01:41:58.000Z" itemprop="datePublished">Nov 21</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2014/11/21/libchan-code-analysis/">libchan实现分析</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2014/11/16/leetcode-sort-list/" class="archive-article-date">
-  <time datetime="2014-11-16T06:42:25.000Z" itemprop="datePublished">Nov 16</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2014/11/16/leetcode-sort-list/">LeetCode - Sort List</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2014/11/15/cpp-vector-deque-stack/" class="archive-article-date">
-  <time datetime="2014-11-15T08:15:31.000Z" itemprop="datePublished">Nov 15</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2014/11/15/cpp-vector-deque-stack/">c++ vector和deque的区别</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2014/10/25/gorun-code-analysis/" class="archive-article-date">
-  <time datetime="2014-10-25T12:01:22.000Z" itemprop="datePublished">Oct 25</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2014/10/25/gorun-code-analysis/">gorun实现分析</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
 </section>
         
           <aside id="sidebar">
@@ -428,11 +247,13 @@ ga('send', 'pageview');
 <script>
   var disqus_shortname = 'kmiku7';
   
+  var disqus_url = 'http://kmiku7.github.io/2018/02/07/request-processing-in-django/';
+  
   (function(){
     var dsq = document.createElement('script');
     dsq.type = 'text/javascript';
     dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
   })();
 </script>
