@@ -12,7 +12,7 @@
 <meta property="og:url" content="http://kmiku7.github.io/2018/02/07/request-processing-in-django/index.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
 <meta property="og:description" content="最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。 这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落">
-<meta property="og:updated_time" content="2018-02-07T11:49:34.052Z">
+<meta property="og:updated_time" content="2018-02-09T04:26:27.971Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="request processing in Django">
 <meta name="twitter:description" content="最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。 这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落">
@@ -109,8 +109,13 @@ ga('send', 'pageview');
 <h4 id="39-application-x-www-form-urlencoded-39-数据解析"><a href="#39-application-x-www-form-urlencoded-39-数据解析" class="headerlink" title="&#39;application/x-www-form-urlencoded&#39; 数据解析"></a>&#39;application/x-www-form-urlencoded&#39; 数据解析</h4><p>一次性读取出所有的entity-body数据，并赋值给_body字段，然后解码。<br>这种方式是只能传递form参数，不能上传文件。<br>同时这种方式可以通过 <code>settings.DATA_UPLOAD_MAX_MEMORY_SIZE</code> 设置数据大小上限。</p>
 <h4 id="39-multipart-form-data-39-数据解析"><a href="#39-multipart-form-data-39-数据解析" class="headerlink" title="&#39;multipart/form-data&#39; 数据解析"></a>&#39;multipart/form-data&#39; 数据解析</h4><p>首先判断数据源，如果有_body字段则使用该字段的数据，并封装出来readable object，即有read()函数。<br>如果没有则使用self，self提供了read()函数读取self._stream数据。<br>然后使用 <code>parse_file_upload()</code> 函数解析数据，该函数同时解析出来 POST &amp; FILES参数，不要被函数名误导。该函数使用<code>django.http.multipartparser.MultiPartParser</code>类解析。</p>
 <p>此处上传数据有两种：请求字段，文件。<br>对于上传的普通字段，可以通过 <code>settings.DATA_UPLOAD_MAX_NUMBER_FIELDS</code> 限制上传的字段个数，不包含文件个数，以及通过 <code>settings.DATA_UPLOAD_MAX_MEMORY_SIZE</code> 限制字段值长度和的上限，不包括文件大小。</p>
-<p>对于上传的文件，<code>MultiPartParser class</code>本身没有具体的逻辑，而是提供了一套处理机制，由提供的实现 <code>class FileUploadHandler</code> 的类完成处理。可以提供多个handler，通过参数 <code>settings.FILE_UPLOAD_HANDLERS</code> 配置，有默认值。<a href="https://docs.djangoproject.com/en/1.11/topics/http/file-uploads/#upload-handlers" target="_blank" rel="noopener">ref</a><br>MultiPartParser循环读取上传文件的每个chunk，然后循环调用每个handlers处理当前chunk。每个handlers最后返回一个Filelike object，因此理论上上传一个文件，server端会产生len(handlers)个文件对象，但是我们通过FILES[FILENAME]只会返回一个object，这是因为FILES是 <code>django.utils.datastructures.MultiValueDict</code> 类型，接口类似dict，但是逻辑不同，参考代码：<a href="https://docs.djangoproject.com/en/1.11/_modules/django/utils/datastructures/" target="_blank" rel="noopener">link</a>。<br>GET &amp; POST 类型为 <code>class QueryDict(MultiValueDict)</code>，集成增加了 mutable 开关。</p>
+<p>对于上传的文件，<code>MultiPartParser class</code>本身没有具体的逻辑，而是提供了一套处理机制，由提供的实现 <code>class FileUploadHandler</code> 的类完成处理。可以提供多个handler，通过参数 <code>settings.FILE_UPLOAD_HANDLERS</code> 配置，有默认值，参考文档：<a href="https://docs.djangoproject.com/en/1.11/topics/http/file-uploads/#upload-handlers" target="_blank" rel="noopener">link</a>。这些handler会对每一个Request初始化一次，然后使用同一个handler instance处理request内所有的文件上传信息，根据代码Django遵循了POST数据内每一个 form field or file chunk 都是顺序连续出现的，不会有交叉。<br>MultiPartParser循环读取上传文件的每个chunk，然后循环调用每个handlers处理当前chunk。每个handlers最后返回一个Filelike object，因此理论上上传一个文件，server端会产生len(handlers)个文件对象，但是我们通过FILES[FILENAME]只会返回一个object，这是因为FILES是 <code>django.utils.datastructures.MultiValueDict</code> 类型，接口类似dict，但是逻辑不同，参考代码：<a href="https://docs.djangoproject.com/en/1.11/_modules/django/utils/datastructures/" target="_blank" rel="noopener">link</a>。<br>GET &amp; POST 类型为 <code>class QueryDict(MultiValueDict)</code>，集成增加了 mutable 开关。</p>
 <p>看到这里我们知道file upload handler的设置是全局的，如果想针对某个接口做定制化的配置并不能直接达到目的。那么如果在业务代码收到request object时设置 <code>http.HttpRequest::upload_handlers</code> 字段也是可以的，只要代码中的middlewares，或其他部分没有使用过POST或FILES参数。<br>在某一个时间点上是可以做到的，但是随着项目迭代这种约定很容易被破坏。</p>
+<p>参考链接：</p>
+<ol>
+<li><a href="https://docs.djangoproject.com/en/1.11/topics/http/file-uploads/#id1" target="_blank" rel="noopener">Django 1.11 Doc: Modifying upload handlers on the fly</a></li>
+<li><a href="https://docs.djangoproject.com/en/1.11/ref/files/uploads/#writing-custom-upload-handlers" target="_blank" rel="noopener">Django 1.11 Doc: Writing custom upload handlers</a></li>
+</ol>
 <h1 id="Process"><a href="#Process" class="headerlink" title="Process"></a>Process</h1><p>接下来通过<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">response = WSGIHandler::BaseHandler.get_response(request)</span><br></pre></td></tr></table></figure></p>
 <p>进入处理流程。</p>
 <p>get_response() 主要逻辑就是调用 middleware_chain。<code>settings.MIDDLEWARE</code> 是按顺序执行的，不要被初始化时的 <code>reversed(settings.MIDDLEWARE)</code> 操作混淆。<br>初始化middleware_chain时首先会插入 <code>BaseHandler::_get_response()</code>， 该函数在调用链中最后执行，也就是在该函数里走入url dispatch逻辑，并获取业务代码产生的response object。</p>
@@ -125,7 +130,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjdd0j3or000l3cs6d25njedk" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjdfex1cc002e0zs6adynl9up" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/07/request-processing-in-django/#disqus_thread" class="article-comment-link">Comments</a>
       
