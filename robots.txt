@@ -1,4 +1,4 @@
-DINGTALK_IM_553942112.jpgUser-agent: *
+User-agent: *
 Allow: /
 Allow: /about/
 
