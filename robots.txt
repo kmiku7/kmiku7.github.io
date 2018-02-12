@@ -10,5 +10,6 @@ Disallow: /vendors/
 Disallow: /fancybox/
 Disallow: /img/
 Disallow: /BingSiteAuth.xml
+Disallow: /baidu_verify_FboWPrBt5G.html
 
 Sitemap: http://kmiku7.github.io/sitemap.xml

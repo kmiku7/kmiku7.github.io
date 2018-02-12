@@ -3,20 +3,21 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error | kmiku7&#39;s blog</title>
+  <title>kmiku7&#39;s blog</title>
+  
+    <meta name="robots" content="noindex, follow">
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes. When I use python manage.py runserver to test service, there is no probl">
-<meta name="keywords" content="Python,uWSGI,Nginx,debug,en">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error">
-<meta property="og:url" content="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/index.html">
+  <meta name="description" content="FboWPrBt5G">
+<meta property="og:type" content="website">
+<meta property="og:title" content="kmiku7&#39;s blog">
+<meta property="og:url" content="http://kmiku7.github.io/baidu_verify_FboWPrBt5G.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
-<meta property="og:description" content="Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes. When I use python manage.py runserver to test service, there is no probl">
-<meta property="og:updated_time" content="2018-02-07T11:28:47.284Z">
+<meta property="og:description" content="FboWPrBt5G">
+<meta property="og:updated_time" content="2018-02-12T03:02:34.163Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error">
-<meta name="twitter:description" content="Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes. When I use python manage.py runserver to test service, there is no probl">
+<meta name="twitter:title" content="kmiku7&#39;s blog">
+<meta name="twitter:description" content="FboWPrBt5G">
   
   
     <link rel="icon" href="/img/favicon.ico">
@@ -76,77 +77,31 @@ ga('send', 'pageview');
   </div>
 </header>
       <div class="outer">
-        <section id="main"><article id="post-Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="page-" class="article article-type-page" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" class="article-date">
-  <time datetime="2018-02-02T04:05:15.000Z" itemprop="datePublished">Feb 2 2018</time>
+    <a href="/baidu_verify_FboWPrBt5G.html" class="article-date">
+  <time datetime="2018-02-12T03:02:34.164Z" itemprop="datePublished">Feb 12 2018</time>
 </a>
     
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/Python/">Python</a>
-  </div>
-
   </div>
   <div class="article-inner">
     
     
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error
-    </h1>
-  
-
-      </header>
-    
     <div class="article-entry" itemprop="articleBody">
       
-        <p>Recently I write a django service to produce very large data in response, about 10GB data per request or even larger sometimes.</p>
-<p>When I use <code>python manage.py runserver</code> to test service, there is no problem. But when use nginx + uwsgi to support service, I can&#39;t get the complete response at the client side. At the same time, there is an error log in uwsgi.log and a regular log notice that uswgi has finished request processing:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Fri Feb  88 88:88:88 2088 - uwsgi_response_write_body_do() TIMEOUT !!!</span><br><span class="line">OSError: write error</span><br><span class="line">GET REQUEST-URL =&gt; generated 8888888888 bytes in 8888 msecs (HTTP/1.1 200) 8 headers in 888 bytes</span><br></pre></td></tr></table></figure></p>
-<p>When uwsgi outputs these logs, the client still receives response data until the size of received equal to the generated size output in server log. And the generated size is smaller than the full size of response. So I think there is a large buffer in Nginx. Uwsgi writes response to Nginx actively and the speed is very fast because they are in same machine. But Nginx writes response to client is slow. If Nginx stores response data in buffer, uwsgi&#39;s write request will block when buffer is full. If buffer size is very large, uwsgi will wait a long time before Nginx clears its buffer and write request timeout.<br>Only in this way the Nginx can still write data to client when uwsgi finishs processing and close response stream.</p>
-<p>According to <a href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html#uwsgi_buffering" target="_blank" rel="noopener">ngx_http_uwsgi_module&#39;s document</a>:</p>
-<blockquote>
-<p>When buffering is enabled, nginx receives a response from the uwsgi server as soon as possible, saving it into the buffers set by the uwsgi_buffer_size and uwsgi_buffers directives. If the whole response does not fit into memory, a part of it can be saved to a temporary file on the disk. Writing to temporary files is controlled by the uwsgi_max_temp_file_size and uwsgi_temp_file_write_size directives.</p>
-</blockquote>
-<p>There are memory buffers and temporary file buffers. The default size of memory buffers is only a few kilobytes. But the default max size of temporary file buffers is 1024MB, which is approximately equal to the generated size in uwsgi log.</p>
-<p><strong>In order to solve this problem, we can just disable temporary file buffers, use the directive <code>uwsgi_max_temp_file_size 0;</code>. </strong></p>
-<p>A memory buffer of a few kilobytes is ok because it will not block uwsgi&#39; write request much time.<br>But as the previous analysis, if the transmission speed between Nginx and client side is far slower to the speed between Nginx and uswgi, the problem will come up no matter how smaller the buffer is.<br>As the implementation of Django and uwsgi, uwsgi read a block of data and write to response stream, if the block size is large enough and the transmission speed to the client side is slow enough, the problem will come up even all buffers in Nginx disabled. Because the block can be considered as a different form of buffer.</p>
-<p>So slower transmission speed to client side means the smaller size of buffer we can use.<br>And we don&#39;t know user&#39;s network conditions, what we can do is only disable buffers.</p>
-
+        FboWPrBt5G
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjdjmvrap00026os63l1yvceu" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/baidu_verify_FboWPrBt5G.html" data-id="cjdjmvr9u00006os6v4a2bur7" class="article-share-link">Share</a-->
       
-        <a href="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/#disqus_thread" class="article-comment-link">Comments</a>
+        <a href="http://kmiku7.github.io/baidu_verify_FboWPrBt5G.html#disqus_thread" class="article-comment-link">Comments</a>
       
       
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Nginx/">Nginx</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/debug/">debug</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/en/">en</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/uWSGI/">uWSGI</a></li></ul>
-
     </footer>
   </div>
   
     
-<nav id="article-nav">
-  
-    <a href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          difference between &#39;manage.py runserver&#39; and uswgi
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2015/08/14/codis-network-archi/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">Codis请求转发流程分析</div>
-    </a>
-  
-</nav>
-
   
 </article>
 
@@ -253,7 +208,7 @@ ga('send', 'pageview');
 <script>
   var disqus_shortname = 'kmiku7';
   
-  var disqus_url = 'http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/';
+  var disqus_url = 'http://kmiku7.github.io/baidu_verify_FboWPrBt5G.html';
   
   (function(){
     var dsq = document.createElement('script');
