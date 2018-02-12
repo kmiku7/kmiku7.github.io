@@ -9,5 +9,6 @@ Disallow: /fonts/
 Disallow: /vendors/
 Disallow: /fancybox/
 Disallow: /img/
+Disallow: /BingSiteAuth.xml
 
 Sitemap: http://kmiku7.github.io/sitemap.xml
