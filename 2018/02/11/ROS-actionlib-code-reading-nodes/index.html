@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>ROS actionlib code reading nodes | kmiku7&#39;s blog</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Resource Linksactionlib package linkhttp://wiki.ros.org/actionlib actionlib message package linkhttp://wiki.ros.org/actionlib_msgs?distro=lunar actionlib detailed description linkhttp://wiki.ros.org/a">
+<meta name="keywords" content="en,zh,ros,reading_notes,actionlib">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ROS actionlib code reading nodes">
+<meta property="og:url" content="http://kmiku7.github.io/2018/02/11/ROS-actionlib-code-reading-nodes/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="Resource Linksactionlib package linkhttp://wiki.ros.org/actionlib actionlib message package linkhttp://wiki.ros.org/actionlib_msgs?distro=lunar actionlib detailed description linkhttp://wiki.ros.org/a">
+<meta property="og:image" content="http://kmiku7.github.io/img/ROS-actionlib-code-reading-nodes/image_0.png">
+<meta property="og:image" content="http://kmiku7.github.io/img/ROS-actionlib-code-reading-nodes/image_1.png">
+<meta property="og:image" content="http://kmiku7.github.io/img/ROS-actionlib-code-reading-nodes/image_2.png">
+<meta property="og:image" content="http://kmiku7.github.io/img/ROS-actionlib-code-reading-nodes/image_3.png">
+<meta property="og:image" content="http://kmiku7.github.io/img/ROS-actionlib-code-reading-nodes/image_4.png">
+<meta property="og:updated_time" content="2018-02-11T10:54:47.280Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ROS actionlib code reading nodes">
+<meta name="twitter:description" content="Resource Linksactionlib package linkhttp://wiki.ros.org/actionlib actionlib message package linkhttp://wiki.ros.org/actionlib_msgs?distro=lunar actionlib detailed description linkhttp://wiki.ros.org/a">
+<meta name="twitter:image" content="http://kmiku7.github.io/img/ROS-actionlib-code-reading-nodes/image_0.png">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-ROS-actionlib-code-reading-nodes" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/11/ROS-actionlib-code-reading-nodes/" class="article-date">
+  <time datetime="2018-02-11T10:27:03.000Z" itemprop="datePublished">Feb 11 2018</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/ROS/">ROS</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      ROS actionlib code reading nodes
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+            <div id="toc" class="toc-article">
+                <strong class="toc-title">CONTENT</strong>
+                <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Resource-Links"><span class="toc-text">Resource Links</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Package-Wiki-Reading-Notes"><span class="toc-text">Package Wiki Reading Notes</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Client-Server-Inteaction"><span class="toc-text">Client-Server Inteaction</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Action-Specification-Goal-Feedback-amp-Result"><span class="toc-text">Action Specification: Goal, Feedback, &amp; Result</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#action-File"><span class="toc-text">.action File</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SimpleActionServer-Goal-Policies"><span class="toc-text">SimpleActionServer Goal Policies</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Detailed-Description-Reading-Notes"><span class="toc-text">Detailed Description Reading Notes</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#High-Level-Client-Server-Interaction"><span class="toc-text">High Level Client/Server Interaction</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Server-Description"><span class="toc-text">Server Description</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Commands-triggered-by-the-server-implementer"><span class="toc-text">Commands triggered by the server implementer:</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Commands-triggered-by-the-client"><span class="toc-text">Commands triggered by the client:</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Server-States"><span class="toc-text">Server States:</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Intermediate-States"><span class="toc-text">Intermediate States</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Terminal-States"><span class="toc-text">Terminal States</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Client-Description"><span class="toc-text">Client Description</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Action-Interface-amp-Transport-Layer"><span class="toc-text">Action Interface &amp; Transport Layer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Data-Association-and-Goal-IDs"><span class="toc-text">Data Association and Goal IDs</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#The-Messages"><span class="toc-text">The Messages</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Goal"><span class="toc-text">Goal</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Cancel"><span class="toc-text">Cancel</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-stamp-should-store-the-time-at-which-this-goal-was-requested"><span class="toc-text">The stamp should store the time at which this goal was requested.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#It-is-used-by-an-action-server-when-it-tries-to-preempt-all"><span class="toc-text">It is used by an action server when it tries to preempt all</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#goals-that-were-requested-before-a-certain-time"><span class="toc-text">goals that were requested before a certain time</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-id-provides-a-way-to-associate-feedback-and"><span class="toc-text">The id provides a way to associate feedback and</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#result-message-with-specific-goal-requests-The-id"><span class="toc-text">result message with specific goal requests. The id</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#specified-must-be-unique"><span class="toc-text">specified must be unique.</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Status"><span class="toc-text">Status</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Feedback"><span class="toc-text">Feedback</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#DO-NOT-MODIFY-AUTOGENERATED-FROM-AN-ACTION-DEFINITION"><span class="toc-text">====== DO NOT MODIFY! AUTOGENERATED FROM AN ACTION DEFINITION ======</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Result"><span class="toc-text">Result</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#DO-NOT-MODIFY-AUTOGENERATED-FROM-AN-ACTION-DEFINITION-1"><span class="toc-text">====== DO NOT MODIFY! AUTOGENERATED FROM AN ACTION DEFINITION ======</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Policies"><span class="toc-text">Policies</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Code-Reading-Notes"><span class="toc-text">Code Reading Notes</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Server"><span class="toc-text">Server</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-SimpleActionServer"><span class="toc-text">class actionlib::SimpleActionServer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-ActionServer-amp-actionlib-ActionServerBase"><span class="toc-text">class actionlib::ActionServer &amp; actionlib::ActionServerBase</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-ServerGoalHandle"><span class="toc-text">class actionlib::ServerGoalHandle</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Utilitiy-Class"><span class="toc-text">Utilitiy Class</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#class-DestructionGuard-ScopedProtector"><span class="toc-text">class DestructionGuard, ScopedProtector</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#class-HandleTrackerDeleter"><span class="toc-text">class HandleTrackerDeleter</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#class-StatusTracker"><span class="toc-text">class StatusTracker</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Client"><span class="toc-text">Client</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-SimpleActionClient"><span class="toc-text">class actionlib::SimpleActionClient</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-SimpleClientGoalState"><span class="toc-text">class actionlib::SimpleClientGoalState</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-ActionClient"><span class="toc-text">class actionlib::ActionClient</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-GoalManager"><span class="toc-text">class actionlib::GoalManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-CommStateMachine"><span class="toc-text">class actionlib::CommStateMachine</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#class-actionlib-ClientGoalHandle"><span class="toc-text">class actionlib::ClientGoalHandle</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Reading-Notes"><span class="toc-text">Reading Notes</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Action-Protocol-Message-Definition"><span class="toc-text">Action Protocol Message Definition</span></a></li></ol></li></ol>
+            </div>
+        
+        <h1 id="Resource-Links"><a href="#Resource-Links" class="headerlink" title="Resource Links"></a>Resource Links</h1><p>actionlib package link<br><a href="http://wiki.ros.org/actionlib" target="_blank" rel="noopener">http://wiki.ros.org/actionlib</a></p>
+<p>actionlib message package link<br><a href="http://wiki.ros.org/actionlib_msgs?distro=lunar" target="_blank" rel="noopener">http://wiki.ros.org/actionlib_msgs?distro=lunar</a></p>
+<p>actionlib detailed description link<br><a href="http://wiki.ros.org/actionlib/DetailedDescription" target="_blank" rel="noopener">http://wiki.ros.org/actionlib/DetailedDescription</a></p>
+<p>actionlib Tutorials<br><a href="http://wiki.ros.org/actionlib/Tutorials" target="_blank" rel="noopener">http://wiki.ros.org/actionlib/Tutorials</a></p>
+<h1 id="Package-Wiki-Reading-Notes"><a href="#Package-Wiki-Reading-Notes" class="headerlink" title="Package Wiki Reading Notes"></a>Package Wiki Reading Notes</h1><p><a href="http://wiki.ros.org/actionlib" target="_blank" rel="noopener">http://wiki.ros.org/actionlib</a></p>
+<p>The actionlib stack provides a standardized interface for interfacing with preemptable tasks.</p>
+<p>The package provides tools to create servers that execute long-running goals that can be preempted. And a client interface in order to send requests to server.</p>
+<h2 id="Client-Server-Inteaction"><a href="#Client-Server-Inteaction" class="headerlink" title="Client-Server Inteaction"></a>Client-Server Inteaction</h2><p><img src="/img/ROS-actionlib-code-reading-nodes/image_0.png" alt="image alt text"></p>
+<h2 id="Action-Specification-Goal-Feedback-amp-Result"><a href="#Action-Specification-Goal-Feedback-amp-Result" class="headerlink" title="Action Specification: Goal, Feedback, &amp; Result"></a>Action Specification: Goal, Feedback, &amp; Result</h2><p><strong>These messages are with an action specification.</strong></p>
+<p>There are five ros message types used in action protocol. Cancel message and status message are generic.  Others are action specified.</p>
+<p>Goal Message:</p>
+<p>Include informations used as job inputs. </p>
+<p>Action generator supplies these information in client side.</p>
+<p>Feedback Message:</p>
+<p>Feedback provides server implementers a way to tell an ActionClient about the incremental progress of a goal.</p>
+<ul>
+<li>It is the job code in server side to generate Feedback message. But who decides on what conditions to generate message and send?<br>Q:<br>It’s all depend to job code.<br>Result Message:<br>A result is sent from the ActionServer to the ActionClient upon completion of the goal.</li>
+<li>It must be the job code in server side to generate this message. But who triggers generation?<br>Q:<br>job code call setSucceeded() and supply a result object. Empty value will be used as a default value.</li>
+</ul>
+<h2 id="action-File"><a href="#action-File" class="headerlink" title=".action File"></a>.action File</h2><p>The action specification is defined using a .action file. The .action file has the goal definition, followed by the result definition, followed by the feedback definition, with each section separated by 3 hyphens(---).</p>
+<p>These files are placed in a package’s ./action directory, and look extremely similar to a service’s .srv file.</p>
+<blockquote>
+<p>Based on this .action file, 6 messages need to be generated in order for the client and server to communicate.</p>
+<ul>
+<li>As &quot;Detailed Description&quot; said, there are 5 messages used in action protocol. Why there are 6 messages generated?<br>Q:<br>There are 3 types to hold action specific fields, named &quot;{ActionName}{Goal, Feedback, Result}&quot;. And 3 “Action{Goal, Feedback, Result}” message to wrap action specific information with general messages.<br>Actually there 7 message generated. Include a &quot;{ActionName}Action&quot; message to hold “{ActionName}Action{Goal, Feedback, Result}”.</li>
+</ul>
+</blockquote>
+<h2 id="SimpleActionServer-Goal-Policies"><a href="#SimpleActionServer-Goal-Policies" class="headerlink" title="SimpleActionServer Goal Policies"></a>SimpleActionServer Goal Policies</h2><blockquote>
+<p>Calling acceptNewGoal accepts a new goal when one is available. The status of this goal is set to active upon acceptance, and the status of any previously active goal is set to preempted. Preempts received for the new goal between checking if isNewGoalAvailable or invocation of a goal callback and the acceptNewGoal call will not trigger a preempt callback. This means, isPreemptRequested should be called after accepting the goal even for callback-based implementations to make sure the new goal does not have a pending preempt request.</p>
+<ul>
+<li>Preempt Request will be ignored before goal transition to Active State(??)</li>
+</ul>
+</blockquote>
+<h1 id="Detailed-Description-Reading-Notes"><a href="#Detailed-Description-Reading-Notes" class="headerlink" title="Detailed Description Reading Notes"></a>Detailed Description Reading Notes</h1><p><a href="http://wiki.ros.org/actionlib/DetailedDescription" target="_blank" rel="noopener">http://wiki.ros.org/actionlib/DetailedDescription</a></p>
+<h2 id="High-Level-Client-Server-Interaction"><a href="#High-Level-Client-Server-Interaction" class="headerlink" title="High Level Client/Server Interaction"></a>High Level Client/Server Interaction</h2><h3 id="Server-Description"><a href="#Server-Description" class="headerlink" title="Server Description"></a>Server Description</h3><p>Server State Machine<br><img src="/img/ROS-actionlib-code-reading-nodes/image_1.png" alt="image alt text"></p>
+<ul>
+<li>Why can we make transition from RECALLING to REJECTED/PREEMPTING by setRejected/setAccepted and from PREEMPTING to SUCCEEDED/ABORTED?<br>Q:<br>According to the demo server codes: <a href="http://wiki.ros.org/actionlib_tutorials/Tutorials/SimpleActionServer%28ExecuteCallbackMethod%29" target="_blank" rel="noopener">fibonacci server</a>, we know(guess) that PENDING/RECALLING/PREEMPTING is the inner state which actionlib can decide make transition to and set by the actionlib framework code.<br>Other states are decided by the goal implementation code makes transition to. So the implementer decides whether the goal is preemptible.<br>Setting the rate at which the action server checks for preemption requests is left to the implementer of the server.<br>Refference:<br><a href="#bookmark=id.pbbljn4p3ujh">setAccepted-CancelRequest vs CancelRequest-setAccepted</a></li>
+</ul>
+<h4 id="Commands-triggered-by-the-server-implementer"><a href="#Commands-triggered-by-the-server-implementer" class="headerlink" title="Commands triggered by the server implementer:"></a>Commands triggered by the server implementer:</h4><ul>
+<li>setAccepted</li>
+<li>setRejected</li>
+<li>setSucceeded</li>
+<li>setAborted</li>
+<li>setCanceled</li>
+</ul>
+<h4 id="Commands-triggered-by-the-client"><a href="#Commands-triggered-by-the-client" class="headerlink" title="Commands triggered by the client:"></a>Commands triggered by the client:</h4><ul>
+<li>CancelRequest</li>
+</ul>
+<h4 id="Server-States"><a href="#Server-States" class="headerlink" title="Server States:"></a>Server States:</h4><h5 id="Intermediate-States"><a href="#Intermediate-States" class="headerlink" title="Intermediate States"></a>Intermediate States</h5><ul>
+<li>Pending</li>
+<li>Active</li>
+<li>Recalling<br>goal未执行前收到了cancel command，并且server has not confirmed the goal is canceled. 目标状态也不一定就是canceled</li>
+<li>Preempting</li>
+</ul>
+<h5 id="Terminal-States"><a href="#Terminal-States" class="headerlink" title="Terminal States"></a>Terminal States</h5><ul>
+<li>Rejected<br>The goal was rejected by the action server without being processed and without a request from the acton client to cancel.<br>因此 RECALLING -&gt; (setRejected) -&gt; REJECTED 过程是收到了client::cancel command, 但是server先判断(还在判断)任务有效性，并判断为无效setRejected</li>
+<li>Succeeded</li>
+<li>Aborted</li>
+<li>Recalled<br>The goal was canceled by either another goal, or a cancel request, before the action server began processing the goal.</li>
+</ul>
+<ul>
+<li>What ‘cancel by another goal’ means? How to do it?<br>Q:<br>We send a cancel msg to goal topic with specific goal id without restriction, if we have msg type definition and topic name. So another goal has other goal’s id, it can do it.<br>未执行前被终止。</li>
+</ul>
+<ul>
+<li>Preempted<br>Processing of the goal was canceled by either another goal, or a cancel request sent to the action server.</li>
+</ul>
+<ul>
+<li>cancel by another goal 什么操作？</li>
+</ul>
+<p>Q:</p>
+<p>Same as <a href="#bookmark=id.oa8rptwcs22d">What ‘cancel by another goal’ means? How to do it…</a>.</p>
+<p>执行过程中终止。</p>
+<p>Quote:</p>
+<p><em>&quot;Concurrency Issues</em></p>
+<p><strong><em>setAccepted-CancelRequest vs CancelRequest-setAccepted</em>*</strong>: *</p>
+<p><em>It is somewhat unintuitive that an action server can setAccepted a goal even after it has received a CancelRequest. This is because of a race condition with a CancelRequest being processed asynchronously. That is, since something other than the server implementer&#39;s code is triggering a transition, the server implementer can&#39;t be certain whether they&#39;re in a [PENDING] or [RECALLING] state.&quot;</em></p>
+<p>This quote can explains the question: <a href="#bookmark=id.6iba9pagu9os">Why can we make transition from RECALLING to REJECTED/PREEMPTING by...</a></p>
+<h3 id="Client-Description"><a href="#Client-Description" class="headerlink" title="Client Description"></a>Client Description</h3><p>Quote:</p>
+<p><em>&quot;**In actionlib, we treat the server state machine as the primary machine, and then treat the client state machine as a secondary/coupled state machine that tries to track the server&#39;s state&quot;</em></p>
+<ul>
+<li>How to get states and transition of server state machine at the client side?</li>
+</ul>
+<p>Q:</p>
+<p>Server will send status message at a fixed rate, or when there are goal state transitions.</p>
+<p>They are no method for client to pull status, according to the message type of action protocol.</p>
+<p><img src="/img/ROS-actionlib-code-reading-nodes/image_2.png" alt="image alt text"></p>
+<p>Server Triggered Transitions:</p>
+<p>Reported [State]</p>
+<p>Since the client is trying to track the server’s state, most transitions are triggered by the server reporting its state to the ActionClient.</p>
+<ul>
+<li>server reporting to its state to the ActionClient. How to implement such a mechanisim?</li>
+</ul>
+<p>Q: <a href="#bookmark=id.ltoi3yqfybay">On what conditions these messages would be send?</a></p>
+<p>Receiver Result Message</p>
+<p>The server sends a result message to the client. Receiving a result will always signal the end of tracking a goal.</p>
+<ul>
+<li>Does it report SUCCEEDED state to client when make transition to SUCCEEDED state successful in server side? When dose server send result message?</li>
+</ul>
+<p>Q:</p>
+<p><a href="#heading=h.56gjgn7cmwu3">Result Message</a></p>
+<p>According to the definition of result message, goal final state and result message are packed into one message and sent to client.</p>
+<p>Client Triggered Transitions:</p>
+<p>Cancel Goal</p>
+<p>&quot;Skipping&quot; States</p>
+<p>Quote:</p>
+<p><em>&quot;Given our ROS based transport layer, it is possible that the client does not receive all of the state updates from the server.&quot;</em></p>
+<p><em>&quot;Since multiple action clients can connect to a single action server, it is possible for a second client to cancel a goal sent by the first client.&quot;</em></p>
+<p>状态转换不止图上那些边。</p>
+<ul>
+<li>是不是按照图上的转换路径，两个状态间只要有一条合法路径，就是可以进行转换的？</li>
+</ul>
+<h2 id="Action-Interface-amp-Transport-Layer"><a href="#Action-Interface-amp-Transport-Layer" class="headerlink" title="Action Interface &amp; Transport Layer"></a>Action Interface &amp; Transport Layer</h2><p>The action client and server communicate with each other using a predefined <strong>action protocol</strong>.</p>
+<p>This action protocol relies on ROS topics <strong>in a specified ROS namespace</strong> in order to transport messages.</p>
+<ul>
+<li>Where is action protocol message definition？Status &amp; Cancel message?</li>
+</ul>
+<p>Q:</p>
+<p>Defined in actionlib_msgs(common_msgs) package. used as a dependency.</p>
+<p>Goal &amp; Result &amp; Feedback message are action specific. There are generaton methods in Tutorial documents.</p>
+<p>Cancel uses actionlib_msgs/GoalID message.</p>
+<p>Status uses actionlib_msgs/GoalStatusArray message.</p>
+<ul>
+<li>What is the name of topic used to transports actionlib messages? Which namespace is the topic in？Format of namespace’s name?</li>
+</ul>
+<p>Q:</p>
+<p>Topic is also action specific.</p>
+<p>/ActionName/[goal|cancel|feedback|status|result]</p>
+<p><a href="#bookmark=id.qboeav5tl1ce">topic name format</a></p>
+<p><img src="/img/ROS-actionlib-code-reading-nodes/image_3.png" alt="image alt text"></p>
+<p>ROS Messages:</p>
+<p>goal</p>
+<p>used to send new goals to servers.</p>
+<p>cancel</p>
+<p>used to send cancel requests to servers.</p>
+<p>status</p>
+<p>used to notify clients on the current state of every goal in the system.</p>
+<ul>
+<li>On what conditions these messages would be send?</li>
+</ul>
+<p>Q:</p>
+<p>server send message at some fixed rate, or when there are state of goals changed.</p>
+<p><a href="#heading=h.auou31nk8ac">Status</a></p>
+<p>feedback</p>
+<p>used to send cleints periodic auxilliary information for a goal.</p>
+<ul>
+<li>On what conditions these messages would be send? All depend to goal server code?</li>
+</ul>
+<p>Q:</p>
+<p>All depend to goal code.</p>
+<p>result</p>
+<p>used to send clients one-auxiliary information upon completion of a goal.</p>
+<ul>
+<li>On what conditions these messages would be send?</li>
+</ul>
+<p>Q:</p>
+<p>Send by server when the goal transition to any Terminal State. Even goal server implementer can’t supply or don’t want to supply one.</p>
+<p><a href="#heading=h.56gjgn7cmwu3">Result</a></p>
+<h3 id="Data-Association-and-Goal-IDs"><a href="#Data-Association-and-Goal-IDs" class="headerlink" title="Data Association and Goal IDs"></a>Data Association and Goal IDs</h3><p>Quote:</p>
+<p>&quot;The Goal ID is generally a combination of a node name, counter, and timestamp. Note: The format of the goal ID is still unstable, so users should never parse goal IDs, or rely on their formatting.&quot;</p>
+<ul>
+<li>Goal ID generation logics in code.</li>
+</ul>
+<p>Q:</p>
+<p>actionlib::GoalIDGenerator class</p>
+<p>id: Name-GoalCount-SEC.NSEC</p>
+<p>stamp: now()</p>
+<p>GoalCount counts generateID() invoke times in a single process.</p>
+<ul>
+<li>Who generates goal id?</li>
+</ul>
+<p>Q:</p>
+<p>Client side should fill it. Server will populate one if client don’t supply.</p>
+<h3 id="The-Messages"><a href="#The-Messages" class="headerlink" title="The Messages"></a>The Messages</h3><p>There are different topics for  each message types.</p>
+<h4 id="Goal"><a href="#Goal" class="headerlink" title="Goal"></a>Goal</h4><p>demo message:</p>
+<p>Header header</p>
+<p>actionlib_msgs/GoalID goal_id</p>
+<p>demoGoal goal</p>
+<p>When sending a goal, the action client generally generates both a unique Goal ID and a timestamp.</p>
+<p>If clients leave either of these empty, the action server will populate them.</p>
+<p>Empty stamp: Upon receipt by action server, stamp is set to now()</p>
+<ul>
+<li>具体哪个时间点？</li>
+</ul>
+<p>Empty id: Upon receipt by action server, id is auto-generated. Note that this ID is not very useful since, the action client doesn&#39;t have any way to know the ID that the server generated for its goal.</p>
+<p>如果client不设置id，那么client不能主动cancel goal。</p>
+<ul>
+<li><p>代码中提供的id生成逻辑</p>
+</li>
+<li><p>可以通过Server发送的消息获取id吗？得看有没有api暴露ActionXXX类的消息。</p>
+</li>
+</ul>
+<h4 id="Cancel"><a href="#Cancel" class="headerlink" title="Cancel"></a>Cancel</h4><p>use actionlib_msgs/GoalId message.</p>
+<p>message definition:</p>
+<h1 id="The-stamp-should-store-the-time-at-which-this-goal-was-requested"><a href="#The-stamp-should-store-the-time-at-which-this-goal-was-requested" class="headerlink" title="The stamp should store the time at which this goal was requested."></a>The stamp should store the time at which this goal was requested.</h1><h1 id="It-is-used-by-an-action-server-when-it-tries-to-preempt-all"><a href="#It-is-used-by-an-action-server-when-it-tries-to-preempt-all" class="headerlink" title="It is used by an action server when it tries to preempt all"></a>It is used by an action server when it tries to preempt all</h1><h1 id="goals-that-were-requested-before-a-certain-time"><a href="#goals-that-were-requested-before-a-certain-time" class="headerlink" title="goals that were requested before a certain time"></a>goals that were requested before a certain time</h1><p>time stamp</p>
+<h1 id="The-id-provides-a-way-to-associate-feedback-and"><a href="#The-id-provides-a-way-to-associate-feedback-and" class="headerlink" title="The id provides a way to associate feedback and"></a>The id provides a way to associate feedback and</h1><h1 id="result-message-with-specific-goal-requests-The-id"><a href="#result-message-with-specific-goal-requests-The-id" class="headerlink" title="result message with specific goal requests. The id"></a>result message with specific goal requests. The id</h1><h1 id="specified-must-be-unique"><a href="#specified-must-be-unique" class="headerlink" title="specified must be unique."></a>specified must be unique.</h1><p>string id</p>
+<p>Empty stamp and id make sense:</p>
+<p><img src="/img/ROS-actionlib-code-reading-nodes/image_4.png" alt="image alt text"></p>
+<h4 id="Status"><a href="#Status" class="headerlink" title="Status"></a>Status</h4><p>use actionlib_msgs/GoalStatusArray message.</p>
+<p>Server will broadcast all goal jobs status using GoalStatusArray to all clients of the same goal. Because use topics as underlying communication framework.</p>
+<p>This message is sent by the action server at some fixed rate(generally 10HZ), and is also sent asynchronously on any server goal state transition.</p>
+<h4 id="Feedback"><a href="#Feedback" class="headerlink" title="Feedback"></a>Feedback</h4><p>demo message definition:</p>
+<h1 id="DO-NOT-MODIFY-AUTOGENERATED-FROM-AN-ACTION-DEFINITION"><a href="#DO-NOT-MODIFY-AUTOGENERATED-FROM-AN-ACTION-DEFINITION" class="headerlink" title="====== DO NOT MODIFY! AUTOGENERATED FROM AN ACTION DEFINITION ======"></a>====== DO NOT MODIFY! AUTOGENERATED FROM AN ACTION DEFINITION ======</h1><p>Header header</p>
+<p>actionlib_msgs/GoalStatus status</p>
+<p>demoFeedback feedback</p>
+<p>Provides a way to send periodic updates to action clients during processing of a goal for server implementers.</p>
+<p>Sending feedback is completely optional.</p>
+<h4 id="Result"><a href="#Result" class="headerlink" title="Result"></a>Result</h4><p>demo message definition:</p>
+<h1 id="DO-NOT-MODIFY-AUTOGENERATED-FROM-AN-ACTION-DEFINITION-1"><a href="#DO-NOT-MODIFY-AUTOGENERATED-FROM-AN-ACTION-DEFINITION-1" class="headerlink" title="====== DO NOT MODIFY! AUTOGENERATED FROM AN ACTION DEFINITION ======"></a>====== DO NOT MODIFY! AUTOGENERATED FROM AN ACTION DEFINITION ======</h1><p>Header header</p>
+<p>actionlib_msgs/GoalStatus status</p>
+<p>demoResult result</p>
+<p>Provides a way to send information to action clients upon completion of a goal for server implementer. A result must be sent on a transition to any Terminal State. If implementer does not supply a result message instance, empty message will be sent.</p>
+<h2 id="Policies"><a href="#Policies" class="headerlink" title="Policies"></a>Policies</h2><h1 id="Code-Reading-Notes"><a href="#Code-Reading-Notes" class="headerlink" title="Code Reading Notes"></a>Code Reading Notes</h1><h2 id="Server"><a href="#Server" class="headerlink" title="Server"></a>Server</h2><h3 id="class-actionlib-SimpleActionServer"><a href="#class-actionlib-SimpleActionServer" class="headerlink" title="class actionlib::SimpleActionServer"></a>class actionlib::SimpleActionServer</h3><p>We can register 3 callback functions:</p>
+<p>execute callback, invoked in a separate thread when a new goal is received, we can only initialize it in constructor.;</p>
+<p>goal callback, invoked when a new goal is available, we can only set it by registerGoalCallback() function;</p>
+<p>preempt callback, invoded when a new preempt request is available.</p>
+<p>Preempt means cancal here.</p>
+<p>Execute callback and goal callback is mutally exclusive.</p>
+<p>This server only hold two goals, active goal execute in a separate thread, and next goal.</p>
+<p>The preempt callback will be invoked only when we receive a preempt request for ACTIVE goal.</p>
+<p>If we use execute callback to do the job, the callback will be invoked in a new spawned thread, and we can not change it. If we want to do all the job in a single thread, we can use goal callback and call acceptNewGoal() in it.</p>
+<h3 id="class-actionlib-ActionServer-amp-actionlib-ActionServerBase"><a href="#class-actionlib-ActionServer-amp-actionlib-ActionServerBase" class="headerlink" title="class actionlib::ActionServer &amp; actionlib::ActionServerBase"></a>class actionlib::ActionServer &amp; actionlib::ActionServerBase</h3><p>Quote:</p>
+<p><em>It allows the user to specify callbacks that are invoked when goal or cancel requests come over the wire, and passes back GoalHandles that can be used to track the state of a given goal request. The ActionServer makes no assumptions about the policy used to service these goals, and sends status for each goal over the wire until the last GoalHandle associated with a goal request is destroyed.</em></p>
+<p>We can specify topic queue size for server by rosparam:</p>
+<p>result/feedback/status queue: param actionlib_server_pub_queue_size</p>
+<p>goal/cancel queue: param actionlib_server_sub_queue_size</p>
+<p>topic name format:</p>
+<p>{NodeHandle::name}/result</p>
+<p>This is determined in ActionServer, so it use ActionServer::NodeHandle::name.</p>
+<p><strong>Even there are no goal, the status message will be sent.</strong></p>
+<p>the Rate to send status message:</p>
+<p>use actionlib_status_frequency/status_frequency to set. default is 5Hz.</p>
+<p>rosparam status_list_timeout</p>
+<p>How long a goal will be kept if GoalHandler is released(handle_destruction<em>time</em>).</p>
+<p>Use absolute time as canceled goal guard, if a new goal’s timestamp is smaller than to cancel timestamp previous received, it will be set canceled.</p>
+<h3 id="class-actionlib-ServerGoalHandle"><a href="#class-actionlib-ServerGoalHandle" class="headerlink" title="class actionlib::ServerGoalHandle"></a>class actionlib::ServerGoalHandle</h3><p>改类封装了goal的所有请求信息，已在对应的操作接口。根据代码，goal object在框架以及implementation代码之间是通过拷贝构造传递的。对象中封装了shared_ptr<handlertrackerdeleter>，当最后一个持有对象被释放时，会记录该时间，然后在status_list_timeout时间以后，从status<em>list</em>队列释放goal对应的StatusTracker对象。</handlertrackerdeleter></p>
+<h3 id="Utilitiy-Class"><a href="#Utilitiy-Class" class="headerlink" title="Utilitiy Class"></a>Utilitiy Class</h3><h4 id="class-DestructionGuard-ScopedProtector"><a href="#class-DestructionGuard-ScopedProtector" class="headerlink" title="class DestructionGuard, ScopedProtector"></a>class DestructionGuard, ScopedProtector</h4><p>实现了ActionServer实例级别 &quot;全局变量&quot;，实例内创建的StatusTracker &amp; GoalHandle 等对象会持有一个，包含了一个计数功能。</p>
+<h4 id="class-HandleTrackerDeleter"><a href="#class-HandleTrackerDeleter" class="headerlink" title="class HandleTrackerDeleter"></a>class HandleTrackerDeleter</h4><p>封装了清理工作。</p>
+<h4 id="class-StatusTracker"><a href="#class-StatusTracker" class="headerlink" title="class StatusTracker"></a>class StatusTracker</h4><h2 id="Client"><a href="#Client" class="headerlink" title="Client"></a>Client</h2><h3 id="class-actionlib-SimpleActionClient"><a href="#class-actionlib-SimpleActionClient" class="headerlink" title="class actionlib::SimpleActionClient"></a>class actionlib::SimpleActionClient</h3><p>callback functions:</p>
+<p>done callback,</p>
+<p>active callback,</p>
+<p>feedback callback,</p>
+<p>timeouts:</p>
+<p>execute timeout,</p>
+<p>preempt timeout,</p>
+<h3 id="class-actionlib-SimpleClientGoalState"><a href="#class-actionlib-SimpleClientGoalState" class="headerlink" title="class actionlib::SimpleClientGoalState"></a>class actionlib::SimpleClientGoalState</h3><h3 id="class-actionlib-ActionClient"><a href="#class-actionlib-ActionClient" class="headerlink" title="class actionlib::ActionClient"></a>class actionlib::ActionClient</h3><p>callback functions:</p>
+<p>transition callback,</p>
+<p>feedback callback,</p>
+<p>isServerStarted() 判断逻辑</p>
+<p>收到了status message，此时知道了发送status的 node id，然后这个node id应该订阅了 goal &amp; cancel topics，feedback &amp; result publisher counter != 0。</p>
+<p>rosparam action_lib<em>client</em>[pub|sub]_queue_size 配置了topic 的参数。</p>
+<h3 id="class-actionlib-GoalManager"><a href="#class-actionlib-GoalManager" class="headerlink" title="class actionlib::GoalManager"></a>class actionlib::GoalManager</h3><p>维护了客户端的所有的goal</p>
+<h3 id="class-actionlib-CommStateMachine"><a href="#class-actionlib-CommStateMachine" class="headerlink" title="class actionlib::CommStateMachine"></a>class actionlib::CommStateMachine</h3><p>维护了客户端的单个goal的state信息，及处理回调</p>
+<h3 id="class-actionlib-ClientGoalHandle"><a href="#class-actionlib-ClientGoalHandle" class="headerlink" title="class actionlib::ClientGoalHandle"></a>class actionlib::ClientGoalHandle</h3><p>对应客户端发出的一个goal，每个goal有自己对应的 transition &amp; feedback callback function.</p>
+<h1 id="Reading-Notes"><a href="#Reading-Notes" class="headerlink" title="Reading Notes"></a>Reading Notes</h1><h2 id="Action-Protocol-Message-Definition"><a href="#Action-Protocol-Message-Definition" class="headerlink" title="Action Protocol Message Definition"></a>Action Protocol Message Definition</h2><p><a href="http://wiki.ros.org/actionlib_msgs?distro=lunar" target="_blank" rel="noopener">http://wiki.ros.org/actionlib_msgs?distro=lunar</a></p>
+<ul>
+<li>This package only has three message types: GoalID, GoalStatus, GoalStatusArray, but there are five protocol message according to &quot;Detailed Description&quot;. Where are they defined?</li>
+</ul>
+<p>Q:</p>
+<p>Cancel use GoalID message.</p>
+<p>Status use GoalStatusArray message.</p>
+<p>Goal &amp; Feedback &amp; Result are action specific.</p>
+<ul>
+<li>Who generates timestamp defined in message actionlib_msgs::GoalID?</li>
+</ul>
+<p>Q:</p>
+<p>ActionServer do the message packs, and fill timestamp use Now().</p>
+<ul>
+<li><p>There is a LOST state in actionlib_msgs::GoalStatus. How to use it in client side?</p>
+</li>
+<li><p>What happens if job code don’t call setSucceed() or setAborted() etc.</p>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/02/11/ROS-actionlib-code-reading-nodes/" data-id="cjdini7ui0000b8s6peqbnsm6" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/02/11/ROS-actionlib-code-reading-nodes/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/actionlib/">actionlib</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/en/">en</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/reading-notes/">reading_notes</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/zh/">zh</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/02/07/request-processing-in-django/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">request processing in Django</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ROS/">ROS</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/actionlib/">actionlib</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/reading-notes/">reading_notes</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">12</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Django/" style="font-size: 12px;">Django</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/Python/" style="font-size: 16px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/actionlib/" style="font-size: 10px;">actionlib</a> <a href="/tags/algorithm/" style="font-size: 14px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 16px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 18px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 14px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 12px;">en</a> <a href="/tags/golang/" style="font-size: 14px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 14px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/reading-notes/" style="font-size: 10px;">reading_notes</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 10px;">ros</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 14px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 12px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 20px;">zh</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/02/11/ROS-actionlib-code-reading-nodes/">ROS actionlib code reading nodes</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/07/request-processing-in-django/">request processing in Django</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/">difference between &#39;manage.py runserver&#39; and uswgi</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
+          </li>
+        
+          <li>
+            <a href="/2015/08/14/codis-network-archi/">Codis请求转发流程分析</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2018/02/11/ROS-actionlib-code-reading-nodes/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。 这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落">
-<meta name="keywords" content="Python,zh,Django">
+<meta name="keywords" content="zh,Python,Django">
 <meta property="og:type" content="article">
 <meta property="og:title" content="request processing in Django">
 <meta property="og:url" content="http://kmiku7.github.io/2018/02/07/request-processing-in-django/index.html">
@@ -131,7 +131,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjdic4k6k000loxs64ra8jhjd" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjdjmc0wx000m6rs6mvr1km7o" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/07/request-processing-in-django/#disqus_thread" class="article-comment-link">Comments</a>
       
