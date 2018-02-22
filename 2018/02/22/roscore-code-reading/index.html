@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>roscore code reading | kmiku7&#39;s blog</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="代码版本：/rosdistro: indigo/rosversion: 1.11.21 参考资源链接 roscore wiki ros源码分析(1)—roscore概况 Python中关于XML-RPC原理  配置文件/opt/ros/indigo/etc/ros/roscore.xml这里配置随roscore一起启动的node。 启动的node or process /rosout/rosout">
+<meta name="keywords" content="code-analysis,ros,ros1,roscore,roslaunch">
+<meta property="og:type" content="article">
+<meta property="og:title" content="roscore code reading">
+<meta property="og:url" content="http://kmiku7.github.io/2018/02/22/roscore-code-reading/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="代码版本：/rosdistro: indigo/rosversion: 1.11.21 参考资源链接 roscore wiki ros源码分析(1)—roscore概况 Python中关于XML-RPC原理  配置文件/opt/ros/indigo/etc/ros/roscore.xml这里配置随roscore一起启动的node。 启动的node or process /rosout/rosout">
+<meta property="og:updated_time" content="2018-02-22T09:01:10.664Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="roscore code reading">
+<meta name="twitter:description" content="代码版本：/rosdistro: indigo/rosversion: 1.11.21 参考资源链接 roscore wiki ros源码分析(1)—roscore概况 Python中关于XML-RPC原理  配置文件/opt/ros/indigo/etc/ros/roscore.xml这里配置随roscore一起启动的node。 启动的node or process /rosout/rosout">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-roscore-code-reading" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/22/roscore-code-reading/" class="article-date">
+  <time datetime="2018-02-22T08:59:46.000Z" itemprop="datePublished">Feb 22 2018</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/ros/">ros</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      roscore code reading
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><strong><em>代码版本：<br>/rosdistro: indigo<br>/rosversion: 1.11.21</em></strong></p>
+<h1 id="参考资源链接"><a href="#参考资源链接" class="headerlink" title="参考资源链接"></a>参考资源链接</h1><ul>
+<li><a href="http://wiki.ros.org/roscore" target="_blank" rel="noopener">roscore wiki</a></li>
+<li><a href="http://blog.csdn.net/lewif/article/details/75112520" target="_blank" rel="noopener">ros源码分析(1)—roscore概况</a></li>
+<li><a href="http://www.cnblogs.com/wanghaoran/p/3189017.html" target="_blank" rel="noopener">Python中关于XML-RPC原理</a></li>
+</ul>
+<h1 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h1><p>/opt/ros/indigo/etc/ros/roscore.xml<br>这里配置随roscore一起启动的node。</p>
+<h1 id="启动的node-or-process"><a href="#启动的node-or-process" class="headerlink" title="启动的node or process"></a>启动的node or process</h1><ul>
+<li>/rosout/rosout: a rosout logging node</li>
+<li>ros master</li>
+<li>ros parameter server</li>
+<li>rosmaster</li>
+<li>process monitor</li>
+<li>parent xml-rpc server</li>
+</ul>
+<h1 id="roscore启动逻辑"><a href="#roscore启动逻辑" class="headerlink" title="roscore启动逻辑"></a>roscore启动逻辑</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ type roscore</span><br><span class="line">roscore is hashed (/opt/ros/indigo/bin/roscore)</span><br></pre></td></tr></table></figure>
+<p>核心代码为：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> roslaunch</span><br><span class="line">roslaunch.main([<span class="string">'roscore'</span>, <span class="string">'--core'</span>] + sys.argv[<span class="number">1</span>:])</span><br></pre></td></tr></table></figure></p>
+<p>这里传入的roscore没有作用，--core参数真正指定了启动roscore。配置文件名 roscore.xml 也是在代码中写死，根据版本号等信息拼接出来完整的配置文件路径。</p>
+<p>如果没有预先执行roscore，我们用roslaunch *.launch 启动node也会自动roscore相关的进程组件。分析代码，可以把处理逻辑总结为：roslaunch启动 *.launch 文件中配置的node，启动前先检查环境，如果没有启动roscore则先启动，如果已经启动了，则判断命令行参数中有没有 --core，如果有则报错，如果没有继续执行 *.launch 中的操作。</p>
+<p>roslaunch command demo:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ roslaunch package_name file.launch</span><br></pre></td></tr></table></figure></p>
+<h1 id="roslaunch-启动逻辑"><a href="#roslaunch-启动逻辑" class="headerlink" title="roslaunch 启动逻辑"></a>roslaunch 启动逻辑</h1><p>核心代码逻辑位于 <code>ros_comm/tools/roslaunch/src/roslaunch/parent.py ROSLaunchParent::start()</code>。</p>
+<h2 id="start-infrastructure"><a href="#start-infrastructure" class="headerlink" title="start infrastructure"></a>start infrastructure</h2><h3 id="load-ros-launch-file"><a href="#load-ros-launch-file" class="headerlink" title="load ros launch file"></a>load ros launch file</h3><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/config.py</code>。</p>
+<p>首先加载 roscore.xml 文件，然后加载命令行中执行的 launch file。参考代码注释：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># load the roscore file first. we currently have</span><br><span class="line"># last-declaration wins rules.  roscore is just a</span><br><span class="line"># roslaunch file with special load semantics</span><br></pre></td></tr></table></figure></p>
+<h3 id="start-process-monitor"><a href="#start-process-monitor" class="headerlink" title="start process monitor"></a>start process monitor</h3><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/pmon.py</code>。</p>
+<p><code>ProcessMonitor</code> 是一个继承自<code>Python::Thread</code>的类。其中另一个类<code>Process</code> 代表launch启动的一个进程，封装了进程的一些启动参数，是否是关键节点，如果异常退出是否重启等信息。然后将 Process instance 注册到 ProcessMonitor instance 进行监控。</p>
+<h3 id="start-roslaunch-runner-and-XMLRPC-server"><a href="#start-roslaunch-runner-and-XMLRPC-server" class="headerlink" title="start roslaunch runner and XMLRPC server"></a>start roslaunch runner and XMLRPC server</h3><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/server.py</code>。</p>
+<p>这里启动了一个xmlrpc server，实现在class ROSLaunchParentNode，并注册了一些方法。启动后立即创建一个client去连接server，确认启动成功。</p>
+<h2 id="initialize-the-actual-runner-and-launch"><a href="#initialize-the-actual-runner-and-launch" class="headerlink" title="initialize the actual runner and launch"></a>initialize the actual runner and launch</h2><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/launch.py</code>。</p>
+<p>这里创建一个ROSLaunchRunner instance，这个实例负责启动 launch file 中配置的node。在调用 <code>launch()</code> 启动时，会检测roscore环境是否启动，如果没有则启动：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Setup the state of the ROS network, including the parameter</span></span><br><span class="line"><span class="string">    server state and core services</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    ...           </span><br><span class="line"></span><br><span class="line">    <span class="comment"># start up the core: master + core nodes defined in core.xml</span></span><br><span class="line">    <span class="comment"># 启动 ros master</span></span><br><span class="line">    self._launch_master()</span><br><span class="line">    <span class="comment"># 启动 roscore 包含的 nodes</span></span><br><span class="line">    self._launch_core_nodes()</span><br></pre></td></tr></table></figure></p>
+<p>在启动时，XmlLoader对象用于解析launch file和roscore.xml，并对 core nodes 和 normal nodes分组管理，接口中有参数指定要解析的xml配置文件是否属于roscore的，由调用方负责传入，如果是，其中包含的nodes放入 core nodes中管理。<br>启动 core nodes 时，如果node已经存在，则跳过。启动 normal nodes 时，如果node已经存在，则杀死已存在的node，再启动新node。</p>
+<p>ros master 则是通过<code>rosmaster --core ...</code>方式启动。</p>
+<h1 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h1><ul>
+<li>roscore代表着启动整套基础环境。</li>
+<li>parameter server并不是一个单独存在的Server，而是rosmaster的一部分。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/02/22/roscore-code-reading/" data-id="cjdya7qk7000jm4s6ozpwucto" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/02/22/roscore-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros1/">ros1</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roscore/">roscore</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roslaunch/">roslaunch</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/02/22/rosmaster-code-reading/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          rosmaster code reading
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/02/07/request-processing-in-django/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">request processing in Django</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros1/">ros1</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roscore/">roscore</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roslaunch/">roslaunch</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">11</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Django/" style="font-size: 11.67px;">Django</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 18.33px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 16.67px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 10px;">en</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 11.67px;">ros</a> <a href="/tags/ros1/" style="font-size: 11.67px;">ros1</a> <a href="/tags/roscore/" style="font-size: 11.67px;">roscore</a> <a href="/tags/roslaunch/" style="font-size: 11.67px;">roslaunch</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 11.67px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 20px;">zh</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/02/22/rosmaster-code-reading/">rosmaster code reading</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/22/roscore-code-reading/">roscore code reading</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/07/request-processing-in-django/">request processing in Django</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/">difference between &#39;manage.py runserver&#39; and uswgi</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2018/02/22/roscore-code-reading/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
