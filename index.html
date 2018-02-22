@@ -118,13 +118,40 @@ ga('send', 'pageview');
 <li>检查XmlRpcNode(server)状态，直到退出</li>
 </ol>
 <h2 id="ROSMasterHandler"><a href="#ROSMasterHandler" class="headerlink" title="ROSMasterHandler"></a>ROSMasterHandler</h2><p>最主要的业务逻辑都在这里，实现文件：<code>ros_comm/tools/rosmaster/src/rosmaster/master_api.py</code>。</p>
-<h3 id="对外导出的方法、功能"><a href="#对外导出的方法、功能" class="headerlink" title="对外导出的方法、功能"></a>对外导出的方法、功能</h3><ol>
-<li>EXTERNAL API<br> 1.1. <strong>shutdown</strong><br> Stop this server.<br> 1.2. <strong>getUri</strong><br> Get the XML-RPC URI of this server.<br> 通过xmlrpc server获取xmlrpc server的地址，有种先有鸡还是先有蛋的纠结。<br> 1.3. <strong>getPid</strong><br> Get the PID of this server.</li>
-<li>PARAMETER SERVER ROUNTINES<br> 2.1. <strong>deleteParam</strong><br> 2.2. <strong>setParam</strong><br> 2.3. <strong>getParam</strong><br> 2.4. <strong>searchParam</strong><br> 2.5. <strong>subscribeParam</strong><br> 2.6. <strong>unsubscribeParam</strong><br> 2.7. <strong>hasParam</strong><br> 2.8. <strong>getParamNames</strong></li>
-<li>NOTIFICATION ROUTINES<br> 3.1. <strong>param_update_task</strong></li>
-<li>SERVICE PROVIDER<br> 4.1. <strong>registerService</strong><br> Register the caller as a provider of the specified service.<br> 4.2. <strong>lookupService</strong><br> 4.3. <strong>unregisterService</strong></li>
-<li>PUBLISH/SUBSCRIBE<br> 5.1. <strong>registerSubscriber</strong><br> 5.2. <strong>unregisterSubscriber</strong><br> 5.3. <strong>registerPublisher</strong><br> 5.4. <strong>unregisterPublisher</strong></li>
-<li>GRAPH STATE APIS<br> 6.1. <strong>lookupNode</strong><br> 6.2. <strong>getPublishedTopics</strong><br> 6.3. <strong>getTopicTypes</strong><br> 6.4. <strong>getSystemState</strong></li>
+<h3 id="对外导出的方法、功能"><a href="#对外导出的方法、功能" class="headerlink" title="对外导出的方法、功能"></a>对外导出的方法、功能</h3><h6 id="EXTERNAL-API"><a href="#EXTERNAL-API" class="headerlink" title="EXTERNAL API"></a>EXTERNAL API</h6><ol>
+<li>shutdown<br>Stop this server.</li>
+<li>getUri<br>Get the XML-RPC URI of this server.<br>通过xmlrpc server获取xmlrpc server的地址，有种先有鸡还是先有蛋的纠结。</li>
+<li>getPid<br>Get the PID of this server.</li>
+</ol>
+<h6 id="PARAMETER-SERVER-ROUNTINES"><a href="#PARAMETER-SERVER-ROUNTINES" class="headerlink" title="PARAMETER SERVER ROUNTINES"></a>PARAMETER SERVER ROUNTINES</h6><ol>
+<li>deleteParam</li>
+<li>setParam</li>
+<li>getParam</li>
+<li>searchParam</li>
+<li>subscribeParam</li>
+<li>unsubscribeParam</li>
+<li>hasParam</li>
+<li>getParamNames</li>
+</ol>
+<h6 id="NOTIFICATION-ROUTINES"><a href="#NOTIFICATION-ROUTINES" class="headerlink" title="NOTIFICATION ROUTINES"></a>NOTIFICATION ROUTINES</h6><ol>
+<li>param_update_task</li>
+</ol>
+<h6 id="SERVICE-PROVIDER"><a href="#SERVICE-PROVIDER" class="headerlink" title="SERVICE PROVIDER"></a>SERVICE PROVIDER</h6><ol>
+<li>registerService<br>Register the caller as a provider of the specified service.</li>
+<li>lookupService</li>
+<li>unregisterService</li>
+</ol>
+<h6 id="PUBLISH-SUBSCRIBE"><a href="#PUBLISH-SUBSCRIBE" class="headerlink" title="PUBLISH/SUBSCRIBE"></a>PUBLISH/SUBSCRIBE</h6><ol>
+<li>registerSubscriber</li>
+<li>unregisterSubscriber</li>
+<li>registerPublisher</li>
+<li>unregisterPublisher</li>
+</ol>
+<h6 id="GRAPH-STATE-APIS"><a href="#GRAPH-STATE-APIS" class="headerlink" title="GRAPH STATE APIS"></a>GRAPH STATE APIS</h6><ol>
+<li>lookupNode</li>
+<li>getPublishedTopics</li>
+<li>getTopicTypes</li>
+<li>getSystemState</li>
 </ol>
 <h3 id="核心逻辑"><a href="#核心逻辑" class="headerlink" title="核心逻辑"></a>核心逻辑</h3><ul>
 <li>信息的存储检索</li>
@@ -134,7 +161,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/" data-id="cjdyble7z00493ss6j4an2rmf" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/" data-id="cjdylxli2000pyrvusve1kws8" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -214,7 +241,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/22/roscore-code-reading/" data-id="cjdyble7w00453ss6r91srr8b" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/22/roscore-code-reading/" data-id="cjdylxlhz000lyrvuw8kqrnbs" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/22/roscore-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -284,7 +311,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjdyble6q000j3ss6adtfudjk" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjdylxlk7004qyrvut8y54kno" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/07/request-processing-in-django/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -340,7 +367,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" data-id="cjdyble6g00093ss68nm4jen1" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" data-id="cjdylxlho000eyrvupib82a7v" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -396,7 +423,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjdyble6500013ss6b08923ie" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" data-id="cjdylxlh60004yrvuxs0gjvj5" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/#disqus_thread" class="article-comment-link">Comments</a>
       
