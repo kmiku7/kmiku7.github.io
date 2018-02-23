@@ -3,17 +3,20 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Tag: Nginx | kmiku7&#39;s blog</title>
-  
-    <meta name="robots" content="noindex, follow">
+  <title>rosout, rosconsole code reading | kmiku7&#39;s blog</title>
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="kmiku7&#39;s blog">
-<meta property="og:url" content="http://kmiku7.github.io/tags/Nginx/index.html">
+  <meta name="description" content="资源链接 rosout wiki rosconsole wiki roscpp/Overview/Logging rospy/Overview/Logging  使用在程序中我们可以使用ros提供的log函数输出信息，或者使用 printf/cout 系列函数直接向stdout/stderr 输出信息。根据wiki描述，这些信息会出现如下这些位置：  stdout stderr Node log">
+<meta name="keywords" content="code-analysis,ros,ros1,roscore,rosout,rosconsole,logging">
+<meta property="og:type" content="article">
+<meta property="og:title" content="rosout, rosconsole code reading">
+<meta property="og:url" content="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/index.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="资源链接 rosout wiki rosconsole wiki roscpp/Overview/Logging rospy/Overview/Logging  使用在程序中我们可以使用ros提供的log函数输出信息，或者使用 printf/cout 系列函数直接向stdout/stderr 输出信息。根据wiki描述，这些信息会出现如下这些位置：  stdout stderr Node log">
+<meta property="og:updated_time" content="2018-02-23T04:51:20.149Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="kmiku7&#39;s blog">
+<meta name="twitter:title" content="rosout, rosconsole code reading">
+<meta name="twitter:description" content="资源链接 rosout wiki rosconsole wiki roscpp/Overview/Logging rospy/Overview/Logging  使用在程序中我们可以使用ros提供的log函数输出信息，或者使用 printf/cout 系列函数直接向stdout/stderr 输出信息。根据wiki描述，这些信息会出现如下这些位置：  stdout stderr Node log">
   
   
     <link rel="icon" href="/img/favicon.ico">
@@ -73,39 +76,99 @@ ga('send', 'pageview');
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-  
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" class="archive-article-date">
-  <time datetime="2018-02-02T04:05:15.000Z" itemprop="datePublished">Feb 2</time>
+        <section id="main"><article id="post-rosout-rosconsole-code-reading" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/23/rosout-rosconsole-code-reading/" class="article-date">
+  <time datetime="2018-02-23T02:44:29.000Z" itemprop="datePublished">Feb 23 2018</time>
 </a>
-      
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/ros/">ros</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
+    <h1 class="article-title" itemprop="name">
+      rosout, rosconsole code reading
     </h1>
   
 
-    </header>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="资源链接"><a href="#资源链接" class="headerlink" title="资源链接"></a>资源链接</h1><ul>
+<li><a href="http://wiki.ros.org/rosout" target="_blank" rel="noopener">rosout wiki</a></li>
+<li><a href="http://wiki.ros.org/rosconsole" target="_blank" rel="noopener">rosconsole wiki</a></li>
+<li><a href="http://wiki.ros.org/roscpp/Overview/Logging" target="_blank" rel="noopener">roscpp/Overview/Logging</a></li>
+<li><a href="http://wiki.ros.org/rospy/Overview/Logging" target="_blank" rel="noopener">rospy/Overview/Logging</a></li>
+</ul>
+<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><p>在程序中我们可以使用ros提供的log函数输出信息，或者使用 printf/cout 系列函数直接向stdout/stderr 输出信息。根据wiki描述，这些信息会出现如下这些位置：</p>
+<ul>
+<li>stdout</li>
+<li>stderr</li>
+<li>Node log file</li>
+<li>/rosout topic</li>
+</ul>
+<h2 id="日志相关配置参数"><a href="#日志相关配置参数" class="headerlink" title="日志相关配置参数"></a>日志相关配置参数</h2><h3 id="roslaunch-screen"><a href="#roslaunch-screen" class="headerlink" title="roslaunch --screen"></a>roslaunch --screen</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--screen              Force output of all local nodes to screen</span><br></pre></td></tr></table></figure>
+<p>默认条件下，roslaunch会把node process stdout/stderr 重定向到磁盘文件，文件名格式为 <code>XXXX-[stdout|stderr].log</code>。如果使用该参数，则不重定向。</p>
+<p>该参数默认在launch文件中必选：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;node</span><br><span class="line">    name=&quot;NODE_NAME&quot;</span><br><span class="line">    pkg=&quot;PACKAGE_NAME&quot;</span><br><span class="line">    type=&quot;TYPE&quot;</span><br><span class="line">    output=&quot;log|screen&quot;&gt;</span><br></pre></td></tr></table></figure></p>
+<p>参考代码：<code>ros_comm/tools/roslaunch/src/roslaunch/nodeprocess.py::LocalProcess::_configure_logging()</code></p>
+<h3 id="log4cxx-config-file"><a href="#log4cxx-config-file" class="headerlink" title="log4cxx config file."></a>log4cxx config file.</h3><p>roscpp环境下，ros log函数底层提供了三种不同的实现: log4cxx， google log， console output。在package编译时选择确定。</p>
+<p>在选择使用log4cxx的情况下，可以通过 <code>env::ROS_ROOT/config/rosconsole.config</code> 或者 <code>env::ROSCONSOLE_CONFIG_FILE</code> 指定log4cxx库接受的配置文件。</p>
+<p>初始化时，log4cxx impl 默认添加一个 ROSConsoleStdioAppender，因此日志会向 stdout/stderr 输出。node开发者可以添加多个appender。</p>
+<p>若果使用 google log impl，或者 console output impl，日志也会向stdout/stderr输出，与log4cxx的区别是只能额外注册一个appender，并且会被RosoutAppender占用，因此node 开发者无法额外添加。</p>
+<p>参考代码：<code>ros_comm/tools/rosconsole/src/rosconsole/impl/</code></p>
+<h3 id="ros-init-init-options-NoRosout"><a href="#ros-init-init-options-NoRosout" class="headerlink" title="ros::init(init_options::NoRosout)"></a>ros::init(init_options::NoRosout)</h3><blockquote>
+<p>Note that until the node is fully started, messages will not be sent, so you may not see initial messages.</p>
+</blockquote>
+<p>根据wiki我们可以在<code>/rosout topic</code>中查看使用log函数输出的日志，但需要node完全启动后。</p>
+<p>该输出方式通过向 rosconsole（roscpp环境下）注册 ROSOutAppender 实现。该过程实现在 ros::start() 函数中，默认会被NodeHandle构造函数调用。</p>
+<p>参考代码：<code>ros_comm/clients/roscpp/src/libros/init.cpp</code></p>
+<h2 id="代码分析"><a href="#代码分析" class="headerlink" title="代码分析"></a>代码分析</h2><ul>
+<li>roscosole<br>提供client端使用的log函数，及相关的初始化函数。</li>
+<li>rosout<br>订阅/rosout topic，处理消息，写入 rosout.log。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/" data-id="cjdzgg9is000kwls6kxcuonhe" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/logging/">logging</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros1/">ros1</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/rosconsole/">rosconsole</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roscore/">roscore</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/rosout/">rosout</a></li></ul>
+
+    </footer>
   </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/02/22/rosmaster-code-reading/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">rosmaster code reading</div>
+    </a>
+  
+</nav>
+
+  
 </article>
-  
-  
-    </div></section>
-  
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
 </section>
         
           <aside id="sidebar">
@@ -202,11 +265,13 @@ ga('send', 'pageview');
 <script>
   var disqus_shortname = 'kmiku7';
   
+  var disqus_url = 'http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/';
+  
   (function(){
     var dsq = document.createElement('script');
     dsq.type = 'text/javascript';
     dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
   })();
 </script>
