@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>OpenTSDB Code Reading: 1. Code About UID | kmiku7&#39;s blog</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="code: https://github.com/kmiku7/opentsdb/tree/comment-v2.3.0package: net.opentsdb.uid Summary 慎重使用Random Id uid长度不应该超过该sizeof(long)   Exception ClassFailedToAssignUniqueIdException/RuntimeException当在库">
+<meta name="keywords" content="code-analysis,HBase,NoSQL,DATABASE,OpenTSDB,Bugfix">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenTSDB Code Reading: 1. Code About UID">
+<meta property="og:url" content="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="code: https://github.com/kmiku7/opentsdb/tree/comment-v2.3.0package: net.opentsdb.uid Summary 慎重使用Random Id uid长度不应该超过该sizeof(long)   Exception ClassFailedToAssignUniqueIdException/RuntimeException当在库">
+<meta property="og:updated_time" content="2018-03-23T07:18:32.849Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OpenTSDB Code Reading: 1. Code About UID">
+<meta name="twitter:description" content="code: https://github.com/kmiku7/opentsdb/tree/comment-v2.3.0package: net.opentsdb.uid Summary 慎重使用Random Id uid长度不应该超过该sizeof(long)   Exception ClassFailedToAssignUniqueIdException/RuntimeException当在库">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-OpenTSDB-code-reading-1-core-about-uid" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" class="article-date">
+  <time datetime="2018-03-23T04:20:30.000Z" itemprop="datePublished">Mar 23 2018</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/OpenTSDB/">OpenTSDB</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      OpenTSDB Code Reading: 1. Code About UID
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>code: <a href="https://github.com/kmiku7/opentsdb/tree/comment-v2.3.0" target="_blank" rel="noopener">https://github.com/kmiku7/opentsdb/tree/comment-v2.3.0</a><br>package: net.opentsdb.uid</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><ul>
+<li>慎重使用Random Id</li>
+<li>uid长度不应该超过该sizeof(long)</li>
+<li></li>
+</ul>
+<h2 id="Exception-Class"><a href="#Exception-Class" class="headerlink" title="Exception Class"></a>Exception Class</h2><h3 id="FailedToAssignUniqueIdException-RuntimeException"><a href="#FailedToAssignUniqueIdException-RuntimeException" class="headerlink" title="FailedToAssignUniqueIdException/RuntimeException"></a>FailedToAssignUniqueIdException/RuntimeException</h3><p>当在库中持久化 name -&gt; uid 映射关系失败时抛出，信息中包含重试次数（attempts）。</p>
+<h3 id="NoSuchUniqueId-NoSuchElementException"><a href="#NoSuchUniqueId-NoSuchElementException" class="headerlink" title="NoSuchUniqueId/NoSuchElementException"></a>NoSuchUniqueId/NoSuchElementException</h3><p>没有uid对应的name。</p>
+<h3 id="NoSuchUniqueName-NoSuchElementException"><a href="#NoSuchUniqueName-NoSuchElementException" class="headerlink" title="NoSuchUniqueName/NoSuchElementException"></a>NoSuchUniqueName/NoSuchElementException</h3><p>没有name对应的uid。</p>
+<p>这几个列中均声明了如下变量：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">1266815261</span>;</span><br></pre></td></tr></table></figure></p>
+<p>java class实现了Serializable Interface时需要定义该字段，这几个异常类均继承自java异常类，因此间接实现了Serializable接口。</p>
+<p>References:</p>
+<ul>
+<li><a href="https://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html" target="_blank" rel="noopener">Interface Serializable</a></li>
+<li><a href="https://stackoverflow.com/questions/285793/what-is-a-serialversionuid-and-why-should-i-use-it" target="_blank" rel="noopener">What is a serialVersionUID and why should I use it?
+</a></li>
+<li><a href="https://www.mkyong.com/java-best-practices/understand-the-serialversionuid/" target="_blank" rel="noopener">Understand the serialVersionUID</a></li>
+</ul>
+<h2 id="Utility-Class"><a href="#Utility-Class" class="headerlink" title="Utility Class"></a>Utility Class</h2><h3 id="RandomUniqueId"><a href="#RandomUniqueId" class="headerlink" title="RandomUniqueId"></a>RandomUniqueId</h3><p>生成一个width字节长度的随机数。</p>
+<p>该类目前只由<code>net.opentsdb.uid.UniqueId</code>使用。实现中却依赖到<code>net.opentsdb.core.TSDB</code>类，观察没有必要。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> net.opentsdb.core.TSDB;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getRandomUID</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getRandomUID(TSDB.metrics_width());</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>uid默认长度为3字节，2.2版本以前通过修改代码改变长度，2.2以后支持配置项。但是根据代码实现，RandomUniqueId class限制了width长度不大于7字节，UniqueId class限制了width长度在[1, 8]字节之间。这也许是开发过程遗留的bug。</p>
+<h3 id="UniqueId"><a href="#UniqueId" class="headerlink" title="UniqueId"></a>UniqueId</h3><p>metric/tagk/tagv 每种name对应独立的UniqueId Instance。<br>UniqueId class 实现了 UniqueIdInterface，但是根据注释描述，UniqueIdInterface没有用处，属于一种过渡设计。</p>
+<h4 id="ID生成"><a href="#ID生成" class="headerlink" title="ID生成"></a>ID生成</h4><h5 id="自增"><a href="#自增" class="headerlink" title="自增"></a>自增</h5><p>在tsdb-uid表中ROW:{\0x0} 维护了 metric/tagk/tagv 的当前最大ID，数据如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">\x00 column=id:metrics, timestamp=1521783825851, value=\x00\x00\x00\x00\x00\x00\x01\xF3</span><br><span class="line">\x00 column=id:tagk, timestamp=1521783825817, value=\x00\x00\x00\x00\x00\x00\x00\x11</span><br><span class="line">\x00 column=id:tagv, timestamp=1521783825853, value=\x00\x00\x00\x00\x00\x00\x00\xE2</span><br></pre></td></tr></table></figure></p>
+<h5 id="Random"><a href="#Random" class="headerlink" title="Random"></a>Random</h5><p>使用RandomUniqueId class生成。<br>注意该版本代码有Bug：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// File: UniqueId.java</span></span><br><span class="line"><span class="comment">// Line: 509</span></span><br><span class="line">      <span class="keyword">if</span> (randomize_id) &#123;</span><br><span class="line">        <span class="keyword">return</span> Deferred.fromResult(RandomUniqueId.getRandomUID());</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">// File: RandomUniqueId.java</span></span><br><span class="line"><span class="comment">// Line: 45</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getRandomUID</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getRandomUID(TSDB.metrics_width());</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过无参版本全都使用了metrics的长度，而没有根据具体类型区分。如果tagk/tagv配置的uid长度比metric的长，会导致部分字节没有使用。如果tagk/tagv配置的uid长度比metric的端，则会因为id-length(tagk/tagv)范围外的字节非零导致失败。</p>
+<p>参考代码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// File: UniqueId.java</span></span><br><span class="line"><span class="comment">// Line: 517</span></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Create the reverse mapping.</span></span><br><span class="line"><span class="comment">     * We do this before the forward one so that if we die before creating</span></span><br><span class="line"><span class="comment">     * the forward mapping we don't run the risk of "publishing" a</span></span><br><span class="line"><span class="comment">     * partially assigned ID.  The reverse mapping on its own is harmless</span></span><br><span class="line"><span class="comment">     * but the forward mapping without reverse mapping is bad as it would</span></span><br><span class="line"><span class="comment">     * point to an ID that cannot be resolved.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Deferred&lt;Boolean&gt; <span class="title">createReverseMapping</span><span class="params">(<span class="keyword">final</span> Object arg)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (!(arg <span class="keyword">instanceof</span> Long)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Expected a Long but got "</span> + arg);</span><br><span class="line">      &#125;</span><br><span class="line">      id = (Long) arg;</span><br><span class="line">      <span class="keyword">if</span> (id &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Got a negative ID from HBase: "</span> + id);</span><br><span class="line">      &#125;</span><br><span class="line">      LOG.info(<span class="string">"Got ID="</span> + id</span><br><span class="line">               + <span class="string">" for kind='"</span> + kind() + <span class="string">"' name='"</span> + name + <span class="string">"'"</span>);</span><br><span class="line">      row = Bytes.fromLong(id);</span><br><span class="line">      <span class="comment">// row.length should actually be 8.</span></span><br><span class="line">      <span class="keyword">if</span> (row.length &lt; id_width) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"OMG, row.length = "</span> + row.length</span><br><span class="line">                                        + <span class="string">" which is less than "</span> + id_width</span><br><span class="line">                                        + <span class="string">" for id="</span> + id</span><br><span class="line">                                        + <span class="string">" row="</span> + Arrays.toString(row));</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// Verify that we're going to drop bytes that are 0.</span></span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; row.length - id_width; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (row[i] != <span class="number">0</span>) &#123;</span><br><span class="line">          <span class="keyword">final</span> String message = <span class="string">"All Unique IDs for "</span> + kind()</span><br><span class="line">            + <span class="string">" on "</span> + id_width + <span class="string">" bytes are already assigned!"</span>;</span><br><span class="line">          LOG.error(<span class="string">"OMG "</span> + message);</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(message);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// Shrink the ID on the requested number of bytes.</span></span><br><span class="line">      row = Arrays.copyOfRange(row, row.length - id_width, row.length);</span><br><span class="line"></span><br><span class="line">      state = CREATE_FORWARD_MAPPING;</span><br><span class="line">      <span class="comment">// We are CAS'ing the KV into existence -- the second argument is how</span></span><br><span class="line">      <span class="comment">// we tell HBase we want to atomically create the KV, so that if there</span></span><br><span class="line">      <span class="comment">// is already a KV in this cell, we'll fail.  Technically we could do</span></span><br><span class="line">      <span class="comment">// just a `put' here, as we have a freshly allocated UID, so there is</span></span><br><span class="line">      <span class="comment">// not reason why a KV should already exist for this UID, but just to</span></span><br><span class="line">      <span class="comment">// err on the safe side and catch really weird corruption cases, we do</span></span><br><span class="line">      <span class="comment">// a CAS instead to create the KV.</span></span><br><span class="line">      <span class="keyword">return</span> client.compareAndSet(reverseMapping(), HBaseClient.EMPTY_ARRAY);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>另外根据代码实现，配置长度不能大约sizeof(long)的长度。metrics/tagk/tagv的取值空间是互相独立的，因为不同类型的name放在不同的列中，数据如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">\x00\x00\x01 column=name:metrics, timestamp=1521783821055, value=tcollector.reader.lines_collected</span><br><span class="line">\x00\x00\x01 column=name:tagk, timestamp=1521783821228, value=host</span><br><span class="line">\x00\x00\x01 column=name:tagv, timestamp=1521783821237, value=999928e09e92</span><br><span class="line">namespace column=id:tagv, timestamp=1521783825636, value=\x00\x00\xAA</span><br><span class="line">net.sockstat.ipfragqueues column=id:metrics, timestamp=1521783825806, value=\x00\x01\xE4</span><br></pre></td></tr></table></figure></p>
+<p>写库过程中均使用了CompareAndSet方式，库中value应为空。</p>
+<h4 id="name查询-find-suggestions-of-names-given-a-search-term"><a href="#name查询-find-suggestions-of-names-given-a-search-term" class="headerlink" title="name查询/find suggestions of names given a search term"></a>name查询/find suggestions of names given a search term</h4><p>查询是按照metrics/tagk/tagv维度进行。目测代码支持混合查询。使用scanner实现，参考代码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// File: UniqueId.java</span></span><br><span class="line"><span class="comment">// Line: 1184</span></span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Scanner <span class="title">getSuggestScanner</span><span class="params">(<span class="keyword">final</span> HBaseClient client,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> <span class="keyword">byte</span>[] tsd_uid_table, <span class="keyword">final</span> String search,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> <span class="keyword">byte</span>[] kind_or_null, <span class="keyword">final</span> <span class="keyword">int</span> max_results)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">byte</span>[] start_row;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">byte</span>[] end_row;</span><br><span class="line">    <span class="keyword">if</span> (search.isEmpty()) &#123;</span><br><span class="line">      start_row = START_ROW;</span><br><span class="line">      end_row = END_ROW;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      start_row = toBytes(search);</span><br><span class="line">      end_row = Arrays.copyOf(start_row, start_row.length);</span><br><span class="line">      end_row[start_row.length - <span class="number">1</span>]++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">final</span> Scanner scanner = client.newScanner(tsd_uid_table);</span><br><span class="line">    scanner.setStartKey(start_row);</span><br><span class="line">    scanner.setStopKey(end_row);</span><br><span class="line">    scanner.setFamily(ID_FAMILY);</span><br><span class="line">    <span class="keyword">if</span> (kind_or_null != <span class="keyword">null</span>) &#123;</span><br><span class="line">      scanner.setQualifier(kind_or_null);</span><br><span class="line">    &#125;</span><br><span class="line">    scanner.setMaxNumRows(max_results &lt;= <span class="number">4096</span> ? max_results : <span class="number">4096</span>);</span><br><span class="line">    <span class="keyword">return</span> scanner;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>References:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/configuration.html#properties" target="_blank" rel="noopener">OpenTSDB Configuration Properties</a></li>
+<li><a href="https://stackoverflow.com/questions/981549/javas-virtual-machines-endianness" target="_blank" rel="noopener">Java&#39;s Virtual Machine&#39;s Endianness</a></li>
+</ul>
+<h3 id="UID-filter"><a href="#UID-filter" class="headerlink" title="UID filter"></a>UID filter</h3><p>代码中提供了Plugin机制对metric/tagk/tagv进行验证过滤，通过的name才可以在创建。但是该功能目前未在文档中提及。</p>
+<p>相关类：</p>
+<ul>
+<li>UniqueIdFilterPlugin</li>
+<li>UniqueIdWhitelistFilter</li>
+</ul>
+<p>相关配置项：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tsd.uidfilter.enable</span><br><span class="line">tsd.uidfilter.plugin</span><br></pre></td></tr></table></figure></p>
+<p>从实现上看，只支持一个Plugin生效。默认不使用。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" data-id="cjf3m6phv000011s6g0366i0o" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Bugfix/">Bugfix</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HBase/">HBase</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NoSQL/">NoSQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/02/23/rosout-rosconsole-code-reading/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">rosout, rosconsole code reading</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Bugfix/">Bugfix</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DATABASE/">DATABASE</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HBase/">HBase</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NoSQL/">NoSQL</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/logging/">logging</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros1/">ros1</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosconsole/">rosconsole</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roscore/">roscore</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roslaunch/">roslaunch</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosout/">rosout</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">11</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Bugfix/" style="font-size: 10px;">Bugfix</a> <a href="/tags/DATABASE/" style="font-size: 10px;">DATABASE</a> <a href="/tags/Django/" style="font-size: 11.67px;">Django</a> <a href="/tags/HBase/" style="font-size: 10px;">HBase</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/NoSQL/" style="font-size: 10px;">NoSQL</a> <a href="/tags/OpenTSDB/" style="font-size: 10px;">OpenTSDB</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 18.33px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 16.67px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 10px;">en</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/logging/" style="font-size: 10px;">logging</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 13.33px;">ros</a> <a href="/tags/ros1/" style="font-size: 13.33px;">ros1</a> <a href="/tags/rosconsole/" style="font-size: 10px;">rosconsole</a> <a href="/tags/roscore/" style="font-size: 13.33px;">roscore</a> <a href="/tags/roslaunch/" style="font-size: 11.67px;">roslaunch</a> <a href="/tags/rosout/" style="font-size: 10px;">rosout</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 11.67px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 20px;">zh</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/">OpenTSDB Code Reading: 1. Code About UID</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/23/rosout-rosconsole-code-reading/">rosout, rosconsole code reading</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/22/rosmaster-code-reading/">rosmaster code reading</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/22/roscore-code-reading/">roscore code reading</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/07/request-processing-in-django/">request processing in Django</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
