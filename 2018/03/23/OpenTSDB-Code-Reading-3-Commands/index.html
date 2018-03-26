@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8">
   
-  <title>rosmaster code reading | kmiku7&#39;s blog</title>
+  <title>OpenTSDB Code Reading: 3. Commands | kmiku7&#39;s blog</title>
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="参考资源 rosmaster wiki Python2 SimpleXMLRPCServer manualregister_instane()注册实例中不以下划线开头，并且callable的对象。  代码路径入口 rosmaster commandros_comm/tools/rosmaster/scripts/rosmaster rosmaster logic entryros_comm/too">
-<meta name="keywords" content="code-analysis,ros,ros1,roscore,roslaunch">
+  <meta name="description" content="Class: net.opentsdb.tsd.RpcManager 该类维护了HTTP/RPC Protocol下指令，以及具体执行对象的信息。 CommandsWriteputtelnet: puthttp-api: api/putcode: class PutDataPointRpc qualifier 格式Long比特位格式：bit[0:2] 保存value lengthbit[3] Fl">
+<meta name="keywords" content="code-analysis,HBase,NoSQL,DATABASE,OpenTSDB,Bugfix">
 <meta property="og:type" content="article">
-<meta property="og:title" content="rosmaster code reading">
-<meta property="og:url" content="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/index.html">
+<meta property="og:title" content="OpenTSDB Code Reading: 3. Commands">
+<meta property="og:url" content="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/index.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
-<meta property="og:description" content="参考资源 rosmaster wiki Python2 SimpleXMLRPCServer manualregister_instane()注册实例中不以下划线开头，并且callable的对象。  代码路径入口 rosmaster commandros_comm/tools/rosmaster/scripts/rosmaster rosmaster logic entryros_comm/too">
-<meta property="og:updated_time" content="2018-02-22T14:45:17.522Z">
+<meta property="og:description" content="Class: net.opentsdb.tsd.RpcManager 该类维护了HTTP/RPC Protocol下指令，以及具体执行对象的信息。 CommandsWriteputtelnet: puthttp-api: api/putcode: class PutDataPointRpc qualifier 格式Long比特位格式：bit[0:2] 保存value lengthbit[3] Fl">
+<meta property="og:updated_time" content="2018-03-26T08:49:33.118Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="rosmaster code reading">
-<meta name="twitter:description" content="参考资源 rosmaster wiki Python2 SimpleXMLRPCServer manualregister_instane()注册实例中不以下划线开头，并且callable的对象。  代码路径入口 rosmaster commandros_comm/tools/rosmaster/scripts/rosmaster rosmaster logic entryros_comm/too">
+<meta name="twitter:title" content="OpenTSDB Code Reading: 3. Commands">
+<meta name="twitter:description" content="Class: net.opentsdb.tsd.RpcManager 该类维护了HTTP/RPC Protocol下指令，以及具体执行对象的信息。 CommandsWriteputtelnet: puthttp-api: api/putcode: class PutDataPointRpc qualifier 格式Long比特位格式：bit[0:2] 保存value lengthbit[3] Fl">
   
   
     <link rel="icon" href="/img/favicon.ico">
@@ -76,14 +76,14 @@ ga('send', 'pageview');
   </div>
 </header>
       <div class="outer">
-        <section id="main"><article id="post-rosmaster-code-reading" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-OpenTSDB-Code-Reading-3-Commands" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2018/02/22/rosmaster-code-reading/" class="article-date">
-  <time datetime="2018-02-22T09:01:22.000Z" itemprop="datePublished">Feb 22 2018</time>
+    <a href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/" class="article-date">
+  <time datetime="2018-03-23T11:44:49.000Z" itemprop="datePublished">Mar 23 2018</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/ros/">ros</a>
+    <a class="article-category-link" href="/categories/OpenTSDB/">OpenTSDB</a>
   </div>
 
   </div>
@@ -94,7 +94,7 @@ ga('send', 'pageview');
         
   
     <h1 class="article-title" itemprop="name">
-      rosmaster code reading
+      OpenTSDB Code Reading: 3. Commands
     </h1>
   
 
@@ -102,72 +102,117 @@ ga('send', 'pageview');
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="参考资源"><a href="#参考资源" class="headerlink" title="参考资源"></a>参考资源</h1><ul>
-<li><a href="http://wiki.ros.org/rosmaster" target="_blank" rel="noopener">rosmaster wiki</a></li>
-<li><a href="https://docs.python.org/2/library/simplexmlrpcserver.html#SimpleXMLRPCServer.SimpleXMLRPCServer.register_instance" target="_blank" rel="noopener">Python2 SimpleXMLRPCServer manual</a><br>register_instane()注册实例中不以下划线开头，并且callable的对象。</li>
+        <p>Class: net.opentsdb.tsd.RpcManager</p>
+<p>该类维护了HTTP/RPC Protocol下指令，以及具体执行对象的信息。</p>
+<h2 id="Commands"><a href="#Commands" class="headerlink" title="Commands"></a>Commands</h2><h3 id="Write"><a href="#Write" class="headerlink" title="Write"></a>Write</h3><h4 id="put"><a href="#put" class="headerlink" title="put"></a>put</h4><p>telnet: put<br>http-api: api/put<br>code: class PutDataPointRpc</p>
+<h5 id="qualifier-格式"><a href="#qualifier-格式" class="headerlink" title="qualifier 格式"></a>qualifier 格式</h5><p>Long比特位格式：<br>bit[0:2] 保存value length<br>bit[3] Float Flag<br><strong>毫秒时间戳</strong><br>bit[0:5] 保存flag<br>bit[6:27] 保存真实时间戳<br>bit[28:31] 全为1，java为大端，该信息保存在bytes[0]位置<br><strong>秒时间戳</strong><br>bit[0:3] 保存flag<br>bit[4:] 保存真实时间戳</p>
+<h5 id="秒与毫秒时间戳的区分"><a href="#秒与毫秒时间戳的区分" class="headerlink" title="秒与毫秒时间戳的区分"></a>秒与毫秒时间戳的区分</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Mask to verify a timestamp on 4 bytes in seconds */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> SECOND_MASK = <span class="number">0xFFFFFFFF00000000L</span>;</span><br></pre></td></tr></table></figure>
+<p>timestamp不超过<code>~SECOND_MASK</code>，则认为时间戳单位为秒。否则为毫秒。<br>参考代码：<a href="https://github.com/kmiku7/opentsdb/blob/comment-v2.3.0/src/core/TSDB.java#L967" target="_blank" rel="noopener">link</a></p>
+<h5 id="append模式与普通模式"><a href="#append模式与普通模式" class="headerlink" title="append模式与普通模式"></a>append模式与普通模式</h5><p>append模式下，统一小时内的数据都追加到同一列中，qualifer为<code>0x050000</code>，共三字节。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// File: AppendDataPoints.java</span></span><br><span class="line"><span class="comment">// Line: 41</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AppendDataPoints</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger LOG = LoggerFactory.getLogger(AppendDataPoints.class);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">/** The prefix ID of append columns */</span></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> APPEND_COLUMN_PREFIX = <span class="number">0x05</span>;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">/** The full column qualifier for append columns */</span></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span>[] APPEND_COLUMN_QUALIFIER = <span class="keyword">new</span> <span class="keyword">byte</span>[] &#123;</span><br><span class="line">    APPEND_COLUMN_PREFIX, <span class="number">0x00</span>, <span class="number">0x00</span>&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>References:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/writing.html#appends" target="_blank" rel="noopener">OpenTSDB, User Guide, Writing Data, Appends</a></li>
 </ul>
-<h1 id="代码路径入口"><a href="#代码路径入口" class="headerlink" title="代码路径入口"></a>代码路径入口</h1><ul>
-<li>rosmaster command<br><code>ros_comm/tools/rosmaster/scripts/rosmaster</code></li>
-<li>rosmaster logic entry<br><code>ros_comm/tools/rosmaster/src/rosmaster/main.py rosmaster_main()</code></li>
+<h5 id="compaction"><a href="#compaction" class="headerlink" title="compaction"></a>compaction</h5><p>class: </p>
+<ul>
+<li>net.opentsdb.core.CompactionQueue</li>
+<li>net.opentsdb.core.CompactionQueue.Compaction</li>
+<li>net.opentsdb.core.CompactionQueue.ColumnDatapointIterator</li>
 </ul>
-<h1 id="implementation"><a href="#implementation" class="headerlink" title="implementation"></a>implementation</h1><p>核心逻辑入口在 Master class，实现在<code>ros_comm/tools/rosmaster/src/rosmaster/master.py</code>文件中。</p>
-<p>启动流程为：</p>
+<p>非append模式下，每次有新数据写入，就会将rowkey插入到一个CompactionQueue，然后定期处理，该对象是一个Sorted Set，插入时有去重。</p>
+<p>CompactionQueue初始化时会启动一个thread处理任务。当前时间 - baseTime(rowkey) &gt; 3600秒，则会进行处理。</p>
+<h3 id="Read"><a href="#Read" class="headerlink" title="Read"></a>Read</h3><h4 id="Stats"><a href="#Stats" class="headerlink" title="Stats"></a>Stats</h4><p>telnet: stats<br>http-api: api/stats<br>http-ui: stats<br>code: class StatsRpc</p>
+<p>class: net.opentsdb.stats.StatsCollector<br>StatsCollector是一个抽象基类，接口实现中初始化一个StatsCollector类型对象，然后在各组件中通过调用collectStats()接口收集状态信息。<br>StatsCollector默认内部记录统计信息的格式为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">stats-name timestamp value tagk=tagv tagk=tav...</span><br></pre></td></tr></table></figure></p>
+<p>返回给用户的，没记录一条信息就会调用StatsCollector::emit(record-str)函数，子类实现emit函数，完成格式的状态。</p>
+<h4 id="Drop-Caches"><a href="#Drop-Caches" class="headerlink" title="Drop Caches"></a>Drop Caches</h4><p>telnet: dropcaches<br>http-api: api/dropcaches<br>http-ui: dropcaches<br>code: class DropCachesRpc</p>
+<p>metrics/tagk/tagv各对应一个UniqueId Instance，该类内部有 name &lt;-&gt; id 映射关系的缓存，该接口清空这三个对象内部缓存。<a href="https://github.com/kmiku7/opentsdb/blob/comment-v2.3.0/src/core/TSDB.java#L1276" target="_blank" rel="noopener">code link</a></p>
+<h4 id="Version"><a href="#Version" class="headerlink" title="Version"></a>Version</h4><p>telnet: version<br>http-api: api/version<br>http-ui: version<br>code: class RpcManager.Version</p>
+<p>获取实例的版本信息。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;short_revision&quot;: &quot;&quot;,</span><br><span class="line">    &quot;repo&quot;: &quot;/root/opentsdb-2.3.0/build&quot;,</span><br><span class="line">    &quot;host&quot;: &quot;***********&quot;,</span><br><span class="line">    &quot;version&quot;: &quot;2.3.0&quot;,</span><br><span class="line">    &quot;full_revision&quot;: &quot;&quot;,</span><br><span class="line">    &quot;repo_status&quot;: &quot;MODIFIED&quot;,</span><br><span class="line">    &quot;user&quot;: &quot;root&quot;,</span><br><span class="line">    &quot;branch&quot;: &quot;&quot;,</span><br><span class="line">    &quot;timestamp&quot;: &quot;1521782831&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过脚本<code>build-aux/gen_build_data.sh</code>生成BuildData.java文件，运行时读取该类的信息。</p>
+<h4 id="Exit"><a href="#Exit" class="headerlink" title="Exit"></a>Exit</h4><p>telnet: exit<br>code: class RpcManager.Exit</p>
+<p>关闭连接。</p>
+<h4 id="Help"><a href="#Help" class="headerlink" title="Help"></a>Help</h4><p>telnet: help<br>code: class RpcManager.Help</p>
+<p>返回telnet_commands列表。</p>
+<h4 id="HomePage"><a href="#HomePage" class="headerlink" title="HomePage"></a>HomePage</h4><p>http-ui: &quot;&quot;<br>code: class RpcManager.HomePage</p>
+<p>UI主页。</p>
+<h4 id="List-Aggregators"><a href="#List-Aggregators" class="headerlink" title="List Aggregators"></a>List Aggregators</h4><p>http-api: api/aggregators<br>http-ui: aggregators<br>code: class ListAggregators</p>
+<p>显示支持的聚合方式列表。</p>
+<h4 id="Static-File"><a href="#Static-File" class="headerlink" title="Static File"></a>Static File</h4><p>http-ui: favicon.ico|s<br>code: class StaticFileRpc</p>
+<p>返回 /s/[path/to/static/file] s之后的uri部分对应的静态文件。</p>
+<h4 id="Logs"><a href="#Logs" class="headerlink" title="Logs"></a>Logs</h4><p>http-ui: logs<br>code: class LogsRpc</p>
+<p>该接口有两类功能：</p>
 <ol>
-<li>解析传入参数</li>
-<li>初始化 ROSMasterHandler</li>
-<li>初始化 XmlRpcNode(server)，并启动</li>
-<li>检查XmlRpcNode(server)状态，直到退出</li>
+<li>获取日志信息，默认plain text格式，可加参数json。</li>
+<li>设置logger日志等级，参数 level, logger。<br><a href="https://logback.qos.ch/apidocs/src-html/ch/qos/logback/classic/Level.html#line.198" target="_blank" rel="noopener">level参数取值</a></li>
 </ol>
-<h2 id="ROSMasterHandler"><a href="#ROSMasterHandler" class="headerlink" title="ROSMasterHandler"></a>ROSMasterHandler</h2><p>最主要的业务逻辑都在这里，实现文件：<code>ros_comm/tools/rosmaster/src/rosmaster/master_api.py</code>。</p>
-<h3 id="对外导出的方法、功能"><a href="#对外导出的方法、功能" class="headerlink" title="对外导出的方法、功能"></a>对外导出的方法、功能</h3><h6 id="EXTERNAL-API"><a href="#EXTERNAL-API" class="headerlink" title="EXTERNAL API"></a>EXTERNAL API</h6><ol>
-<li>shutdown<br>Stop this server.</li>
-<li>getUri<br>Get the XML-RPC URI of this server.<br>通过xmlrpc server获取xmlrpc server的地址，有种先有鸡还是先有蛋的纠结。</li>
-<li>getPid<br>Get the PID of this server.</li>
-</ol>
-<h6 id="PARAMETER-SERVER-ROUNTINES"><a href="#PARAMETER-SERVER-ROUNTINES" class="headerlink" title="PARAMETER SERVER ROUNTINES"></a>PARAMETER SERVER ROUNTINES</h6><ol>
-<li>deleteParam</li>
-<li>setParam</li>
-<li>getParam</li>
-<li>searchParam</li>
-<li>subscribeParam</li>
-<li>unsubscribeParam</li>
-<li>hasParam</li>
-<li>getParamNames</li>
-</ol>
-<h6 id="NOTIFICATION-ROUTINES"><a href="#NOTIFICATION-ROUTINES" class="headerlink" title="NOTIFICATION ROUTINES"></a>NOTIFICATION ROUTINES</h6><ol>
-<li>param_update_task</li>
-</ol>
-<h6 id="SERVICE-PROVIDER"><a href="#SERVICE-PROVIDER" class="headerlink" title="SERVICE PROVIDER"></a>SERVICE PROVIDER</h6><ol>
-<li>registerService<br>Register the caller as a provider of the specified service.</li>
-<li>lookupService</li>
-<li>unregisterService</li>
-</ol>
-<h6 id="PUBLISH-SUBSCRIBE"><a href="#PUBLISH-SUBSCRIBE" class="headerlink" title="PUBLISH/SUBSCRIBE"></a>PUBLISH/SUBSCRIBE</h6><ol>
-<li>registerSubscriber</li>
-<li>unregisterSubscriber</li>
-<li>registerPublisher</li>
-<li>unregisterPublisher</li>
-</ol>
-<h6 id="GRAPH-STATE-APIS"><a href="#GRAPH-STATE-APIS" class="headerlink" title="GRAPH STATE APIS"></a>GRAPH STATE APIS</h6><ol>
-<li>lookupNode</li>
-<li>getPublishedTopics</li>
-<li>getTopicTypes</li>
-<li>getSystemState</li>
-</ol>
-<h3 id="核心逻辑"><a href="#核心逻辑" class="headerlink" title="核心逻辑"></a>核心逻辑</h3><ul>
-<li>信息的存储检索</li>
-<li>信息的订阅通知</li>
+<h4 id="Graph"><a href="#Graph" class="headerlink" title="Graph"></a>Graph</h4><p>http-ui: q<br>code: class GraphHandler</p>
+<h4 id="Suggest"><a href="#Suggest" class="headerlink" title="Suggest"></a>Suggest</h4><p>http-api: api/suggest<br>http-ui: suggest<br>code: SuggestRpc</p>
+<p>It&#39;s used for auto-complete entries and does not support wildcards.</p>
+<p>输入参数：</p>
+<ul>
+<li>type: metrics, tagk, tagv. required.</li>
+<li>q: optional, default &quot;&quot;.</li>
+<li>max: optional, default 25.</li>
 </ul>
+<h4 id="Annotation"><a href="#Annotation" class="headerlink" title="Annotation"></a>Annotation</h4><p>http-api: api/annotation|api/annotations<br>code: class AnnotationRpc</p>
+<h4 id="Show-Config"><a href="#Show-Config" class="headerlink" title="Show Config"></a>Show Config</h4><p>http-api: api/config<br>code: class RpcManager.ShowConfig</p>
+<p>两种请求</p>
+<ol>
+<li>api/config<br>返回运行实例的配置项。</li>
+<li>api/config/filters<br>返回所有的tag value filters信息。</li>
+</ol>
+<h4 id="Query"><a href="#Query" class="headerlink" title="Query"></a>Query</h4><p>http-api: api/query<br>code: class QueryRpc</p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/api_http/query/index.html" target="_blank" rel="noopener">HTTP API, /api/query</a></li>
+</ul>
+<h4 id="Search"><a href="#Search" class="headerlink" title="Search"></a>Search</h4><p>http-api: api/search<br>code: class SearchRpc</p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/api_http/search/index.html" target="_blank" rel="noopener">HTTP API, /api/search</a></li>
+</ul>
+<h4 id="Serializers"><a href="#Serializers" class="headerlink" title="Serializers"></a>Serializers</h4><p>http-api: api/serializers<br>code: class Serializers</p>
+<p>显示支持的序列化方式列表。</p>
+<h4 id="Tree"><a href="#Tree" class="headerlink" title="Tree"></a>Tree</h4><p>http-api: api/tree<br>code: class TreeRpc</p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/trees.html" target="_blank" rel="noopener">User Guide, Trees</a></li>
+</ul>
+<ol>
+<li>/api/tree</li>
+<li>/api/tree/branch</li>
+<li>/api/tree/rule</li>
+<li>/api/tree/rules</li>
+<li>/api/tree/test</li>
+<li>/api/tree/collisions</li>
+<li>/api/tree/notmatched</li>
+</ol>
+<h4 id="UniqueId"><a href="#UniqueId" class="headerlink" title="UniqueId"></a>UniqueId</h4><p>http-api: api/uid<br>code: class UniqueIdRpc</p>
+<p>该接口有如下子功能：</p>
+<ol>
+<li><p>assign<br>给name分配uid。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/api/uid/assign?metric=nameA,nameB&amp;tagk=nameC,nameD&amp;tagv=nameE,nameF</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>uidmeta<br> 2.1. GET<br> 获取uid meta信息</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/api/uid/uidmeta?type=tagk&amp;uid=000013</span><br></pre></td></tr></table></figure>
+<p> 2.2. POST<br> 设置meta信息。<br> 2.3. DELETE<br> 删除meta信息。</p>
+</li>
+<li>tsmeta<br>Handles CRUD calls to individual TSMeta data entries</li>
+<li>rename<br>更改uid对应的名字，一次只能更新一个。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/api/uid/rename?tagk=OldName&amp;name=NewName</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h4 id="DieDieDie"><a href="#DieDieDie" class="headerlink" title="DieDieDie"></a>DieDieDie</h4><p>telnet: diediedie<br>http: diediedie<br>code: class DieDieDie</p>
+<p>关闭服务端。</p>
 
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/" data-id="cjf3w7lhe000x4us6xdf6r81y" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/" data-id="cjf3w7lfy00004us6uhgvdg9k" class="article-share-link">Share</a-->
       
-        <a href="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
+        <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/#disqus_thread" class="article-comment-link">Comments</a>
       
       
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros1/">ros1</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roscore/">roscore</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roslaunch/">roslaunch</a></li></ul>
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Bugfix/">Bugfix</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HBase/">HBase</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NoSQL/">NoSQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li></ul>
 
     </footer>
   </div>
@@ -175,19 +220,10 @@ ga('send', 'pageview');
     
 <nav id="article-nav">
   
-    <a href="/2018/02/23/rosout-rosconsole-code-reading/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          rosout, rosconsole code reading
-        
-      </div>
-    </a>
   
-  
-    <a href="/2018/02/22/roscore-code-reading/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">roscore code reading</div>
+      <div class="article-nav-title">OpenTSDB Code Reading: 2. Server Framework</div>
     </a>
   
 </nav>
@@ -298,7 +334,7 @@ ga('send', 'pageview');
 <script>
   var disqus_shortname = 'kmiku7';
   
-  var disqus_url = 'http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/';
+  var disqus_url = 'http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/';
   
   (function(){
     var dsq = document.createElement('script');

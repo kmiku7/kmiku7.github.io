@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>OpenTSDB Code Reading: 2. Server Framework | kmiku7&#39;s blog</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="入口: net.opentsdb.tools.TSDMain Startup Plugin代码文件 net.opentsdb.tools StartupPlugin.java 用途：  The StartupPlugin allows users to interact with the OpenTSDB configuration as soon as it is completely pars">
+<meta name="keywords" content="code-analysis,HBase,NoSQL,DATABASE,OpenTSDB,Bugfix">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenTSDB Code Reading: 2. Server Framework">
+<meta property="og:url" content="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="入口: net.opentsdb.tools.TSDMain Startup Plugin代码文件 net.opentsdb.tools StartupPlugin.java 用途：  The StartupPlugin allows users to interact with the OpenTSDB configuration as soon as it is completely pars">
+<meta property="og:updated_time" content="2018-03-23T12:23:38.265Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OpenTSDB Code Reading: 2. Server Framework">
+<meta name="twitter:description" content="入口: net.opentsdb.tools.TSDMain Startup Plugin代码文件 net.opentsdb.tools StartupPlugin.java 用途：  The StartupPlugin allows users to interact with the OpenTSDB configuration as soon as it is completely pars">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-OpenTSDB-Code-Reading-2-Server-Framework" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" class="article-date">
+  <time datetime="2018-03-23T09:54:56.000Z" itemprop="datePublished">Mar 23 2018</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/OpenTSDB/">OpenTSDB</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      OpenTSDB Code Reading: 2. Server Framework
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>入口: net.opentsdb.tools.TSDMain</p>
+<h2 id="Startup-Plugin"><a href="#Startup-Plugin" class="headerlink" title="Startup Plugin"></a>Startup Plugin</h2><p>代码文件 net.opentsdb.tools StartupPlugin.java</p>
+<p>用途：</p>
+<blockquote>
+<p>The StartupPlugin allows users to interact with the OpenTSDB configuration as soon as it is completely parsed, just before OpenTSDB begins to use it.<br>服务初始化时，准备提供服务时，退出时，会调用plugin接口。代码中没有提供已实现的Startup Plugin。</p>
+</blockquote>
+<p>配置项：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tsd.startup.enable</span><br><span class="line">tsd.core.plugin_path</span><br><span class="line">tsd.startup.plugin</span><br></pre></td></tr></table></figure></p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/plugins.html#startup-and-service-discovery" target="_blank" rel="noopener">Plugins, Startup and Service Discovery</a><br>文档提到的两个plugin demo链接已经失效，可用链接如下，但是demo几乎没什么用。<ol>
+<li><a href="https://www.programcreek.com/java-api-examples/?code=inst-tech/opentsdb-plugins/opentsdb-plugins-master/src/main/java/io/tsdb/opentsdb/discovery/IdentityPlugin.java" target="_blank" rel="noopener">Identity Plugin</a></li>
+<li><a href="https://www.programcreek.com/java-api-examples/?code=inst-tech/opentsdb-plugins/opentsdb-plugins-master/src/main/java/io/tsdb/opentsdb/discovery/CuratorPlugin.java#" target="_blank" rel="noopener">Curator Plugin</a></li>
+</ol>
+</li>
+</ul>
+<h2 id="Server-Framework"><a href="#Server-Framework" class="headerlink" title="Server Framework"></a>Server Framework</h2><p>服务使用Netty实现，其Channel Pipeline的框架实现在<code>net.opentsdb.tsd PipelineFactory.java</code>。</p>
+<p>根据文档，服务支持两类接口HTTP &amp; RPC，二者使用同一端口，区分方式是根据请求数据的第一个字节，如果第一个字节是[&#39;A&#39;, &#39;Z&#39;]之间的字符，则认为是一个HTTP方式的请求，否则是RPC请求。参考代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// File: PipelineFactory.java</span></span><br><span class="line"><span class="comment">// Line: 132</span></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Dynamically changes the &#123;<span class="doctag">@link</span> ChannelPipeline&#125; based on the request.</span></span><br><span class="line"><span class="comment">   * If a request uses HTTP, then this changes the pipeline to process HTTP.</span></span><br><span class="line"><span class="comment">   * Otherwise, the pipeline is changed to processes an RPC.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">DetectHttpOrRpc</span> <span class="keyword">extends</span> <span class="title">FrameDecoder</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> Object <span class="title">decode</span><span class="params">(<span class="keyword">final</span> ChannelHandlerContext ctx,</span></span></span><br><span class="line"><span class="function"><span class="params">                            <span class="keyword">final</span> Channel chan,</span></span></span><br><span class="line"><span class="function"><span class="params">                            <span class="keyword">final</span> ChannelBuffer buffer)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (buffer.readableBytes() &lt; <span class="number">1</span>) &#123;  <span class="comment">// Yes sometimes we can be called</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;                     <span class="comment">// with an empty buffer...</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">final</span> <span class="keyword">int</span> firstbyte = buffer.getUnsignedByte(buffer.readerIndex());</span><br><span class="line">      <span class="keyword">final</span> ChannelPipeline pipeline = ctx.getPipeline();</span><br><span class="line">      <span class="comment">// None of the commands in the RPC protocol start with a capital ASCII</span></span><br><span class="line">      <span class="comment">// letter for the time being, and all HTTP commands do (GET, POST, etc.)</span></span><br><span class="line">      <span class="comment">// so use this as a cheap way to differentiate the two.</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="string">'A'</span> &lt;= firstbyte &amp;&amp; firstbyte &lt;= <span class="string">'Z'</span>) &#123;</span><br><span class="line">        pipeline.addLast(<span class="string">"decoder"</span>, <span class="keyword">new</span> HttpRequestDecoder());</span><br><span class="line">        <span class="keyword">if</span> (tsdb.getConfig().enable_chunked_requests()) &#123;</span><br><span class="line">          pipeline.addLast(<span class="string">"aggregator"</span>, <span class="keyword">new</span> HttpChunkAggregator(</span><br><span class="line">              tsdb.getConfig().max_chunked_requests()));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// allow client to encode the payload (ie : with gziped json)</span></span><br><span class="line">        pipeline.addLast(<span class="string">"inflater"</span>, <span class="keyword">new</span> HttpContentDecompressor());</span><br><span class="line">        pipeline.addLast(<span class="string">"encoder"</span>, <span class="keyword">new</span> HttpResponseEncoder());</span><br><span class="line">        pipeline.addLast(<span class="string">"deflater"</span>, <span class="keyword">new</span> HttpContentCompressor());</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        pipeline.addLast(<span class="string">"framer"</span>, <span class="keyword">new</span> LineBasedFrameDecoder(<span class="number">1024</span>));</span><br><span class="line">        pipeline.addLast(<span class="string">"encoder"</span>, ENCODER);</span><br><span class="line">        pipeline.addLast(<span class="string">"decoder"</span>, DECODER);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      pipeline.addLast(<span class="string">"timeout"</span>, timeoutHandler);</span><br><span class="line">      pipeline.remove(<span class="keyword">this</span>);</span><br><span class="line">      pipeline.addLast(<span class="string">"handler"</span>, rpchandler);</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Forward the buffer to the next handler.</span></span><br><span class="line">      <span class="keyword">return</span> buffer.readBytes(buffer.readableBytes());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>根据上述代码，我们可以总结两种接口类型的处理Pipeline如下：</p>
+<ul>
+<li>HTTP Protocol<ol>
+<li>connmgr</li>
+<li>detect</li>
+<li>decoder</li>
+<li>aggregator(optional)</li>
+<li>inflater</li>
+<li>encoder</li>
+<li>deflater</li>
+<li>timeout</li>
+<li>handler</li>
+</ol>
+</li>
+<li>RPC Protocol<ol>
+<li>connmgr</li>
+<li>detect</li>
+<li>framer</li>
+<li>encoder</li>
+<li>decoder</li>
+<li>timeout</li>
+<li>handler</li>
+</ol>
+</li>
+</ul>
+<h3 id="Handler-Task"><a href="#Handler-Task" class="headerlink" title="Handler Task"></a>Handler Task</h3><h4 id="HTTP-Protocol"><a href="#HTTP-Protocol" class="headerlink" title="HTTP Protocol"></a>HTTP Protocol</h4><h5 id="connmgr"><a href="#connmgr" class="headerlink" title="connmgr"></a>connmgr</h5><p>Class: net.opentsdb.tsd.ConnectionManager</p>
+<p>Keeps track of all existing connections.<br>Limits the max connections established.</p>
+<h5 id="detect"><a href="#detect" class="headerlink" title="detect"></a>detect</h5><p>File: PipelineFactory.java class DetectHttpOrRpc</p>
+<p>根据请求数据判断协议类型，并添加后续的pipeline handler。</p>
+<h5 id="decoder"><a href="#decoder" class="headerlink" title="decoder"></a>decoder</h5><p>Class: org.jboss.netty.handler.codec.http.HttpRequestDecoder</p>
+<p>官方的请求解析类。</p>
+<h5 id="aggregator"><a href="#aggregator" class="headerlink" title="aggregator"></a>aggregator</h5><p>Class: org.jboss.netty.handler.codec.http.HttpChunkAggregator</p>
+<h5 id="inflater"><a href="#inflater" class="headerlink" title="inflater"></a>inflater</h5><p>Class: org.jboss.netty.handler.codec.http.HttpContentDecompressor</p>
+<h5 id="encoder"><a href="#encoder" class="headerlink" title="encoder"></a>encoder</h5><p>Class: org.jboss.netty.handler.codec.http.HttpResponseEncoder</p>
+<h5 id="deflater"><a href="#deflater" class="headerlink" title="deflater"></a>deflater</h5><p>Class: org.jboss.netty.handler.codec.http.HttpContentCompressor</p>
+<h5 id="timeout"><a href="#timeout" class="headerlink" title="timeout"></a>timeout</h5><p>Class: org.jboss.netty.handler.timeout.IdleStateHandler</p>
+<h5 id="handler"><a href="#handler" class="headerlink" title="handler"></a>handler</h5><p>Class: net.opentsdb.tsd.RpcHandler<br>因为 HTTP/RPC handler 不同，解析出来的message类型也不同，该类根据消息类型在<code>net.opentsdb.tsd.RpcManager</code>中查询对应的 RPC(Telnet)/HTTP 指令执行函数并执行。</p>
+<p>RpcManager中对HTTP官方指令和插件指令各单独维护了一个Map<cmdname, executor=""><br>，二者请求的区别在于uri前缀，如果uri前缀为<code>plugin</code>，则认为是请求插件中提供的功能。然后在对应的Map中查询然后执行。每个Plugin对应一个uri(route)。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 请求官方指令</span><br><span class="line">/api/put</span><br><span class="line"></span><br><span class="line"># 请求插件指令</span><br><span class="line">/plugin/plugin-path</span><br></pre></td></tr></table></figure></cmdname,></p>
+<p>OpenTSDB还支持RPC Plugin，该插件的实现逻辑与HTTP Protocol不同，Plugin实现自己独立的服务框架，与主框架间仅仅是共享一个<code>net.opentsdb.core.TSDB</code>对象。参考RpcPlugin抽象基类定义：<a href="https://github.com/kmiku7/opentsdb/blob/comment-v2.3.0/src/tsd/RpcPlugin.java" target="_blank" rel="noopener">RpcPlugin.java</a>。</p>
+<h4 id="RPC-Protocol"><a href="#RPC-Protocol" class="headerlink" title="RPC Protocol"></a>RPC Protocol</h4><p>与HTTP Protocol相同的handler此处就不再列出。</p>
+<h5 id="framer"><a href="#framer" class="headerlink" title="framer"></a>framer</h5><p>Class: net.opentsdb.tsd.LineBasedFrameDecoder</p>
+<p>Decodes telnet-style frames delimited by new-lines.</p>
+<h5 id="encoder-1"><a href="#encoder-1" class="headerlink" title="encoder"></a>encoder</h5><p>Class: org.jboss.netty.handler.codec.string.StringEncoder</p>
+<h5 id="decoder-1"><a href="#decoder-1" class="headerlink" title="decoder"></a>decoder</h5><p>Class: net.opentsdb.tsd.WordSplitter</p>
+<p>Splits a ChannelBuffer in multiple space separated words.</p>
+<p>References:</p>
+<ul>
+<li><a href="http://www.fanyeong.com/2016/10/29/netty%E7%AE%80%E6%98%8E%E6%95%99%E7%A8%8B/" target="_blank" rel="noopener">netty简明教程</a></li>
+<li><a href="https://netty.io/4.0/api/io/netty/channel/ChannelHandler.html" target="_blank" rel="noopener">Netty Interface ChannelHandler</a></li>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/plugins.html#rpc" target="_blank" rel="noopener">OpenTSDB, Plugins, RPC</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" data-id="cjf3w7lg400014us6ydw7ep3u" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Bugfix/">Bugfix</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HBase/">HBase</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NoSQL/">NoSQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          OpenTSDB Code Reading: 3. Commands
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">OpenTSDB Code Reading: 1. Code About UID</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Bugfix/">Bugfix</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DATABASE/">DATABASE</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HBase/">HBase</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NoSQL/">NoSQL</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/logging/">logging</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros1/">ros1</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosconsole/">rosconsole</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roscore/">roscore</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roslaunch/">roslaunch</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosout/">rosout</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">11</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Bugfix/" style="font-size: 13.33px;">Bugfix</a> <a href="/tags/DATABASE/" style="font-size: 13.33px;">DATABASE</a> <a href="/tags/Django/" style="font-size: 11.67px;">Django</a> <a href="/tags/HBase/" style="font-size: 13.33px;">HBase</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/NoSQL/" style="font-size: 13.33px;">NoSQL</a> <a href="/tags/OpenTSDB/" style="font-size: 13.33px;">OpenTSDB</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 18.33px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 16.67px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 10px;">en</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/logging/" style="font-size: 10px;">logging</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 13.33px;">ros</a> <a href="/tags/ros1/" style="font-size: 13.33px;">ros1</a> <a href="/tags/rosconsole/" style="font-size: 10px;">rosconsole</a> <a href="/tags/roscore/" style="font-size: 13.33px;">roscore</a> <a href="/tags/roslaunch/" style="font-size: 11.67px;">roslaunch</a> <a href="/tags/rosout/" style="font-size: 10px;">rosout</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 11.67px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 20px;">zh</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/">OpenTSDB Code Reading: 3. Commands</a>
+          </li>
+        
+          <li>
+            <a href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/">OpenTSDB Code Reading: 2. Server Framework</a>
+          </li>
+        
+          <li>
+            <a href="/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/">OpenTSDB Code Reading: 1. Code About UID</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/23/rosout-rosconsole-code-reading/">rosout, rosconsole code reading</a>
+          </li>
+        
+          <li>
+            <a href="/2018/02/22/rosmaster-code-reading/">rosmaster code reading</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

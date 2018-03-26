@@ -2,9 +2,23 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/</loc>
+    
+    <lastmod>2018-03-26T08:49:33.118Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/</loc>
+    
+    <lastmod>2018-03-23T12:23:38.265Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/</loc>
     
-    <lastmod>2018-03-23T07:32:37.047Z</lastmod>
+    <lastmod>2018-03-23T11:46:34.780Z</lastmod>
     
   </url>
   
