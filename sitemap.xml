@@ -2,9 +2,23 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://kmiku7.github.io/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/</loc>
+    
+    <lastmod>2018-11-07T05:58:38.887Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://kmiku7.github.io/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/</loc>
+    
+    <lastmod>2018-03-27T11:20:14.779Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/</loc>
     
-    <lastmod>2018-03-26T08:49:33.118Z</lastmod>
+    <lastmod>2018-03-27T08:36:48.582Z</lastmod>
     
   </url>
   
