@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/</loc>
+    
+    <lastmod>2018-11-16T11:45:17.103Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://kmiku7.github.io/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/</loc>
     
     <lastmod>2018-11-07T05:58:38.887Z</lastmod>

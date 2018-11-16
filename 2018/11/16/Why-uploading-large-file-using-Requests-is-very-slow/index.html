@@ -3,17 +3,19 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Category: algorithm | kmiku7&#39;s blog</title>
-  
-    <meta name="robots" content="noindex, follow">
+  <title>Why uploading large file using Requests is very slow? | kmiku7&#39;s blog</title>
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="kmiku7&#39;s blog">
-<meta property="og:url" content="http://kmiku7.github.io/categories/algorithm/index.html">
+  <meta name="description" content="Recently I write a python script to upload files with Requests Lib. The script need about 7 miniutes to upload a file about 3GB in size. While the curl only take less than a miniute.According server-s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why uploading large file using Requests is very slow?">
+<meta property="og:url" content="http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/index.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="Recently I write a python script to upload files with Requests Lib. The script need about 7 miniutes to upload a file about 3GB in size. While the curl only take less than a miniute.According server-s">
+<meta property="og:updated_time" content="2018-11-16T11:45:17.103Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="kmiku7&#39;s blog">
+<meta name="twitter:title" content="Why uploading large file using Requests is very slow?">
+<meta name="twitter:description" content="Recently I write a python script to upload files with Requests Lib. The script need about 7 miniutes to upload a file about 3GB in size. While the curl only take less than a miniute.According server-s">
   
   
     <link rel="icon" href="/img/favicon.ico">
@@ -73,77 +75,78 @@ ga('send', 'pageview');
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-  
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2015" class="archive-year">2015</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/04/27/b-tree-implement/" class="archive-article-date">
-  <time datetime="2015-04-27T14:52:33.000Z" itemprop="datePublished">Apr 27</time>
+        <section id="main"><article id="post-Why-uploading-large-file-using-Requests-is-very-slow" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/" class="article-date">
+  <time datetime="2018-11-16T09:39:24.657Z" itemprop="datePublished">Nov 16 2018</time>
 </a>
-      
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/04/27/b-tree-implement/">B-Tree实现</a>
+    <h1 class="article-title" itemprop="name">
+      Why uploading large file using Requests is very slow?
     </h1>
   
 
-    </header>
-  </div>
-</article>
-  
+      </header>
     
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/04/25/basic-aho-corasick-algorithm/" class="archive-article-date">
-  <time datetime="2015-04-25T13:19:50.000Z" itemprop="datePublished">Apr 25</time>
-</a>
+    <div class="article-entry" itemprop="articleBody">
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/04/25/basic-aho-corasick-algorithm/">AC-Search实现</a>
-    </h1>
-  
+        <p>Recently I write a python script to upload files with Requests Lib. The script need about 7 miniutes to upload a file about 3GB in size. While the curl only take less than a miniute.<br>According server-side&#39;s logs, the time usage between server accept socket and close it is less than a miniute when we use python script.</p>
+<p><strong>Where is the Requests library spend its time?</strong></p>
+<p>After reading Requests&#39;s code, I find the lib will read the full content into memory and encode using the multipart/form-data mime format.<br>The function <a href="https://github.com/requests/requests/blob/v2.20.1/requests/models.py#L110" target="_blank" rel="noopener">_encode_files</a> is used to process file upload request. In the <a href="https://github.com/requests/requests/blob/v2.20.1/requests/models.py#L159" target="_blank" rel="noopener">line:159</a> it read the full content of file. And then call encode_multipart_formdata() function to encode data in the line:169.<br>After this, the libaray can calculate the content length in request body and add &#39;Content-Length&#39; header.</p>
+<p><strong>Why is curl upload file so fast?</strong><br>Because http client need send &#39;Content-Length&#39; header before send body. So we need calculate body size at first. When we upload file, loading file content into memory and encoding body and then calculating body size is a trivial solution.</p>
+<p>So is the time usage difference caused by the performace difference between python and c++?</p>
+<p>After reading curl&#39;s code, I find the programming language performance difference is not the only reason.</p>
+<p>When curl build request to upload file, it will build mimepart structure to describe such a file. When send http body, the curl will call structure method to read data. The related code is <a href="https://github.com/curl/curl/blob/master/lib/mime.c#L1346" target="_blank" rel="noopener">here</a>.</p>
+<p>When we cacluate the body size before send body content, we only need file size. The length of encoded content is unrelated to file content. The related code is <a href="https://github.com/curl/curl/blob/master/lib/mime.c#L1587" target="_blank" rel="noopener">here</a>.</p>
+<p>At last, I use pycurl to refactor my script and the cript perforamce is same as the command curl.</p>
+<h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><ol>
+<li><a href="http://docs.python-requests.org/en/master/" target="_blank" rel="noopener">Requests</a></li>
+<li><a href="https://curl.haxx.se/" target="_blank" rel="noopener">Curl</a></li>
+</ol>
 
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/04/24/leetcode-combination-sum-ii/" class="archive-article-date">
-  <time datetime="2015-04-24T08:20:37.000Z" itemprop="datePublished">Apr 24</time>
-</a>
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/04/24/leetcode-combination-sum-ii/">LeetCode - Combination Sum II</a>
-    </h1>
-  
-
-    </header>
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/" data-id="cjojyivdu000463s6418jaiwb" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
   </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Upgrading To A New Nginx Binary In Different Place On The Fly</div>
+    </a>
+  
+</nav>
+
+  
 </article>
-  
-  
-    </div></section>
-  
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
 </section>
         
           <aside id="sidebar">
@@ -240,11 +243,13 @@ ga('send', 'pageview');
 <script>
   var disqus_shortname = 'kmiku7';
   
+  var disqus_url = 'http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/';
+  
   (function(){
     var dsq = document.createElement('script');
     dsq.type = 'text/javascript';
     dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
   })();
 </script>
