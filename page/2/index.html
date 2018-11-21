@@ -75,6 +75,120 @@ ga('send', 'pageview');
       <div class="outer">
         <section id="main">
   
+    <article id="post-OpenTSDB-Code-Reading-2-Server-Framework" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" class="article-date">
+  <time datetime="2018-03-23T09:54:56.000Z" itemprop="datePublished">Mar 23 2018</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/OpenTSDB/">OpenTSDB</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/">OpenTSDB Code Reading: 2. Server Framework</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>入口: net.opentsdb.tools.TSDMain</p>
+<h2 id="Startup-Plugin"><a href="#Startup-Plugin" class="headerlink" title="Startup Plugin"></a>Startup Plugin</h2><p>代码文件 net.opentsdb.tools StartupPlugin.java</p>
+<p>用途：</p>
+<blockquote>
+<p>The StartupPlugin allows users to interact with the OpenTSDB configuration as soon as it is completely parsed, just before OpenTSDB begins to use it.<br>服务初始化时，准备提供服务时，退出时，会调用plugin接口。代码中没有提供已实现的Startup Plugin。</p>
+</blockquote>
+<p>配置项：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tsd.startup.enable</span><br><span class="line">tsd.core.plugin_path</span><br><span class="line">tsd.startup.plugin</span><br></pre></td></tr></table></figure></p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/plugins.html#startup-and-service-discovery" target="_blank" rel="noopener">Plugins, Startup and Service Discovery</a><br>文档提到的两个plugin demo链接已经失效，可用链接如下，但是demo几乎没什么用。<ol>
+<li><a href="https://www.programcreek.com/java-api-examples/?code=inst-tech/opentsdb-plugins/opentsdb-plugins-master/src/main/java/io/tsdb/opentsdb/discovery/IdentityPlugin.java" target="_blank" rel="noopener">Identity Plugin</a></li>
+<li><a href="https://www.programcreek.com/java-api-examples/?code=inst-tech/opentsdb-plugins/opentsdb-plugins-master/src/main/java/io/tsdb/opentsdb/discovery/CuratorPlugin.java#" target="_blank" rel="noopener">Curator Plugin</a></li>
+</ol>
+</li>
+</ul>
+<h2 id="Server-Framework"><a href="#Server-Framework" class="headerlink" title="Server Framework"></a>Server Framework</h2><p>服务使用Netty实现，其Channel Pipeline的框架实现在<code>net.opentsdb.tsd PipelineFactory.java</code>。</p>
+<p>根据文档，服务支持两类接口HTTP &amp; RPC，二者使用同一端口，区分方式是根据请求数据的第一个字节，如果第一个字节是[&#39;A&#39;, &#39;Z&#39;]之间的字符，则认为是一个HTTP方式的请求，否则是RPC请求。参考代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// File: PipelineFactory.java</span></span><br><span class="line"><span class="comment">// Line: 132</span></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Dynamically changes the &#123;<span class="doctag">@link</span> ChannelPipeline&#125; based on the request.</span></span><br><span class="line"><span class="comment">   * If a request uses HTTP, then this changes the pipeline to process HTTP.</span></span><br><span class="line"><span class="comment">   * Otherwise, the pipeline is changed to processes an RPC.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">DetectHttpOrRpc</span> <span class="keyword">extends</span> <span class="title">FrameDecoder</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> Object <span class="title">decode</span><span class="params">(<span class="keyword">final</span> ChannelHandlerContext ctx,</span></span></span><br><span class="line"><span class="function"><span class="params">                            <span class="keyword">final</span> Channel chan,</span></span></span><br><span class="line"><span class="function"><span class="params">                            <span class="keyword">final</span> ChannelBuffer buffer)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (buffer.readableBytes() &lt; <span class="number">1</span>) &#123;  <span class="comment">// Yes sometimes we can be called</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;                     <span class="comment">// with an empty buffer...</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">final</span> <span class="keyword">int</span> firstbyte = buffer.getUnsignedByte(buffer.readerIndex());</span><br><span class="line">      <span class="keyword">final</span> ChannelPipeline pipeline = ctx.getPipeline();</span><br><span class="line">      <span class="comment">// None of the commands in the RPC protocol start with a capital ASCII</span></span><br><span class="line">      <span class="comment">// letter for the time being, and all HTTP commands do (GET, POST, etc.)</span></span><br><span class="line">      <span class="comment">// so use this as a cheap way to differentiate the two.</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="string">'A'</span> &lt;= firstbyte &amp;&amp; firstbyte &lt;= <span class="string">'Z'</span>) &#123;</span><br><span class="line">        pipeline.addLast(<span class="string">"decoder"</span>, <span class="keyword">new</span> HttpRequestDecoder());</span><br><span class="line">        <span class="keyword">if</span> (tsdb.getConfig().enable_chunked_requests()) &#123;</span><br><span class="line">          pipeline.addLast(<span class="string">"aggregator"</span>, <span class="keyword">new</span> HttpChunkAggregator(</span><br><span class="line">              tsdb.getConfig().max_chunked_requests()));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// allow client to encode the payload (ie : with gziped json)</span></span><br><span class="line">        pipeline.addLast(<span class="string">"inflater"</span>, <span class="keyword">new</span> HttpContentDecompressor());</span><br><span class="line">        pipeline.addLast(<span class="string">"encoder"</span>, <span class="keyword">new</span> HttpResponseEncoder());</span><br><span class="line">        pipeline.addLast(<span class="string">"deflater"</span>, <span class="keyword">new</span> HttpContentCompressor());</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        pipeline.addLast(<span class="string">"framer"</span>, <span class="keyword">new</span> LineBasedFrameDecoder(<span class="number">1024</span>));</span><br><span class="line">        pipeline.addLast(<span class="string">"encoder"</span>, ENCODER);</span><br><span class="line">        pipeline.addLast(<span class="string">"decoder"</span>, DECODER);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      pipeline.addLast(<span class="string">"timeout"</span>, timeoutHandler);</span><br><span class="line">      pipeline.remove(<span class="keyword">this</span>);</span><br><span class="line">      pipeline.addLast(<span class="string">"handler"</span>, rpchandler);</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Forward the buffer to the next handler.</span></span><br><span class="line">      <span class="keyword">return</span> buffer.readBytes(buffer.readableBytes());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>根据上述代码，我们可以总结两种接口类型的处理Pipeline如下：</p>
+<ul>
+<li>HTTP Protocol<ol>
+<li>connmgr</li>
+<li>detect</li>
+<li>decoder</li>
+<li>aggregator(optional)</li>
+<li>inflater</li>
+<li>encoder</li>
+<li>deflater</li>
+<li>timeout</li>
+<li>handler</li>
+</ol>
+</li>
+<li>RPC Protocol<ol>
+<li>connmgr</li>
+<li>detect</li>
+<li>framer</li>
+<li>encoder</li>
+<li>decoder</li>
+<li>timeout</li>
+<li>handler</li>
+</ol>
+</li>
+</ul>
+<h3 id="Handler-Task"><a href="#Handler-Task" class="headerlink" title="Handler Task"></a>Handler Task</h3><h4 id="HTTP-Protocol"><a href="#HTTP-Protocol" class="headerlink" title="HTTP Protocol"></a>HTTP Protocol</h4><h5 id="connmgr"><a href="#connmgr" class="headerlink" title="connmgr"></a>connmgr</h5><p>Class: net.opentsdb.tsd.ConnectionManager</p>
+<p>Keeps track of all existing connections.<br>Limits the max connections established.</p>
+<h5 id="detect"><a href="#detect" class="headerlink" title="detect"></a>detect</h5><p>File: PipelineFactory.java class DetectHttpOrRpc</p>
+<p>根据请求数据判断协议类型，并添加后续的pipeline handler。</p>
+<h5 id="decoder"><a href="#decoder" class="headerlink" title="decoder"></a>decoder</h5><p>Class: org.jboss.netty.handler.codec.http.HttpRequestDecoder</p>
+<p>官方的请求解析类。</p>
+<h5 id="aggregator"><a href="#aggregator" class="headerlink" title="aggregator"></a>aggregator</h5><p>Class: org.jboss.netty.handler.codec.http.HttpChunkAggregator</p>
+<h5 id="inflater"><a href="#inflater" class="headerlink" title="inflater"></a>inflater</h5><p>Class: org.jboss.netty.handler.codec.http.HttpContentDecompressor</p>
+<h5 id="encoder"><a href="#encoder" class="headerlink" title="encoder"></a>encoder</h5><p>Class: org.jboss.netty.handler.codec.http.HttpResponseEncoder</p>
+<h5 id="deflater"><a href="#deflater" class="headerlink" title="deflater"></a>deflater</h5><p>Class: org.jboss.netty.handler.codec.http.HttpContentCompressor</p>
+<h5 id="timeout"><a href="#timeout" class="headerlink" title="timeout"></a>timeout</h5><p>Class: org.jboss.netty.handler.timeout.IdleStateHandler</p>
+<h5 id="handler"><a href="#handler" class="headerlink" title="handler"></a>handler</h5><p>Class: net.opentsdb.tsd.RpcHandler<br>因为 HTTP/RPC handler 不同，解析出来的message类型也不同，该类根据消息类型在<code>net.opentsdb.tsd.RpcManager</code>中查询对应的 RPC(Telnet)/HTTP 指令执行函数并执行。</p>
+<p>RpcManager中对HTTP官方指令和插件指令各单独维护了一个Map<cmdname, executor=""><br>，二者请求的区别在于uri前缀，如果uri前缀为<code>plugin</code>，则认为是请求插件中提供的功能。然后在对应的Map中查询然后执行。每个Plugin对应一个uri(route)。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 请求官方指令</span><br><span class="line">/api/put</span><br><span class="line"></span><br><span class="line"># 请求插件指令</span><br><span class="line">/plugin/plugin-path</span><br></pre></td></tr></table></figure></cmdname,></p>
+<p>OpenTSDB还支持RPC Plugin，该插件的实现逻辑与HTTP Protocol不同，Plugin实现自己独立的服务框架，与主框架间仅仅是共享一个<code>net.opentsdb.core.TSDB</code>对象。参考RpcPlugin抽象基类定义：<a href="https://github.com/kmiku7/opentsdb/blob/comment-v2.3.0/src/tsd/RpcPlugin.java" target="_blank" rel="noopener">RpcPlugin.java</a>。</p>
+<h4 id="RPC-Protocol"><a href="#RPC-Protocol" class="headerlink" title="RPC Protocol"></a>RPC Protocol</h4><p>与HTTP Protocol相同的handler此处就不再列出。</p>
+<h5 id="framer"><a href="#framer" class="headerlink" title="framer"></a>framer</h5><p>Class: net.opentsdb.tsd.LineBasedFrameDecoder</p>
+<p>Decodes telnet-style frames delimited by new-lines.</p>
+<h5 id="encoder-1"><a href="#encoder-1" class="headerlink" title="encoder"></a>encoder</h5><p>Class: org.jboss.netty.handler.codec.string.StringEncoder</p>
+<h5 id="decoder-1"><a href="#decoder-1" class="headerlink" title="decoder"></a>decoder</h5><p>Class: net.opentsdb.tsd.WordSplitter</p>
+<p>Splits a ChannelBuffer in multiple space separated words.</p>
+<p>References:</p>
+<ul>
+<li><a href="http://www.fanyeong.com/2016/10/29/netty%E7%AE%80%E6%98%8E%E6%95%99%E7%A8%8B/" target="_blank" rel="noopener">netty简明教程</a></li>
+<li><a href="https://netty.io/4.0/api/io/netty/channel/ChannelHandler.html" target="_blank" rel="noopener">Netty Interface ChannelHandler</a></li>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/plugins.html#rpc" target="_blank" rel="noopener">OpenTSDB, Plugins, RPC</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" data-id="cjoqy6d0v0000qcfyby3xgj8r" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Bugfix/">Bugfix</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HBase/">HBase</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NoSQL/">NoSQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-OpenTSDB-code-reading-1-core-about-uid" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" class="article-date">
@@ -142,7 +256,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" data-id="cjonvdpb200046wfyd54fvhyh" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" data-id="cjoqy6d160005qcfy6p3mu0kz" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -219,7 +333,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/" data-id="cjonvdpci00196wfytc1vygo6" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/" data-id="cjoqy6d24001hqcfy2jqbtmxo" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -320,7 +434,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/" data-id="cjonvdpcl001c6wfylmh3s8oq" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/" data-id="cjoqy6d20001aqcfyquk3nftk" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -400,82 +514,12 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/22/roscore-code-reading/" data-id="cjonvdpcc00116wfyqd5u3908" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/22/roscore-code-reading/" data-id="cjoqy6d22001cqcfy507squ4i" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/22/roscore-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros1/">ros1</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roscore/">roscore</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roslaunch/">roslaunch</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-request-processing-in-django" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/02/07/request-processing-in-django/" class="article-date">
-  <time datetime="2018-02-07T07:51:44.000Z" itemprop="datePublished">Feb 7 2018</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/Python/">Python</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/02/07/request-processing-in-django/">request processing in Django</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>最近有个需求，提供一个http代理，提供后端分布式文件存储系统的下载、上传两个功能，文件大小极限值在100GB+。考虑到其他一些限制，最终选择使用 Nginx + uWSGI + Django的方案。</p>
-<p>这里仅仅是记录了开发过程中对Django默认配置下，WSGIHandler处理http请求过程的分析。重点关注了请求数据、返回数据的解析、处理过程。因为要避免大量数据载入内存导致异常，以及大量数据落盘导致的开销。<br>文章中的代码片段并没有遵守python语法，为了描述的简洁混杂了c++的语法。</p>
-<p>django code version: 1.11.3</p>
-<h1 id="Request"><a href="#Request" class="headerlink" title="Request"></a>Request</h1><p>默认构造一个WSGIRequest对象。<a href="http://kmiku7.github.io/2018/02/07/difference-between-manage-py-runserver-and-uswgi/">ref</a><br>解析请求参数过程使用了lazy loading方式，GET &amp; POST字段都是property。<br>GET是每次都解析 <code>self.environ[‘QUERY_STRING’]</code> 参数。<br>POST或FILES是其中一个首次使用时（即_post, _files字段为空），调用父类的 <code>_load_post_and_files()</code> 函数，该函数解析post方式的数据，并设置 _post, _files 两个字段，此时POST &amp; FILES都处于直接可用的状态。</p>
-<h3 id="load-post-and-files-函数分析"><a href="#load-post-and-files-函数分析" class="headerlink" title="_load_post_and_files() 函数分析"></a>_load_post_and_files() 函数分析</h3><p>忽略异常判断逻辑。<br>代码只支持 &#39;multipart/form-data&#39; &amp; &#39;application/x-www-form-urlencoded&#39; 两种POST数据编码方式。使用其他方式不会报错，仅仅是 POST &amp; FILES 为空。<br>根据<code>WSGIRequest::__init__()</code>，post entity-body数据流保存在_stream字段，并未读取。</p>
-<h4 id="39-application-x-www-form-urlencoded-39-数据解析"><a href="#39-application-x-www-form-urlencoded-39-数据解析" class="headerlink" title="&#39;application/x-www-form-urlencoded&#39; 数据解析"></a>&#39;application/x-www-form-urlencoded&#39; 数据解析</h4><p>一次性读取出所有的entity-body数据，并赋值给_body字段，然后解码。<br>这种方式是只能传递form参数，不能上传文件。<br>同时这种方式可以通过 <code>settings.DATA_UPLOAD_MAX_MEMORY_SIZE</code> 设置数据大小上限。</p>
-<h4 id="39-multipart-form-data-39-数据解析"><a href="#39-multipart-form-data-39-数据解析" class="headerlink" title="&#39;multipart/form-data&#39; 数据解析"></a>&#39;multipart/form-data&#39; 数据解析</h4><p>首先判断数据源，如果有_body字段则使用该字段的数据，并封装出来readable object，即有read()函数。<br>如果没有则使用self，self提供了read()函数读取self._stream数据。<br>然后使用 <code>parse_file_upload()</code> 函数解析数据，该函数同时解析出来 POST &amp; FILES参数，不要被函数名误导。该函数使用<code>django.http.multipartparser.MultiPartParser</code>类解析。</p>
-<p>此处上传数据有两种：请求字段，文件。<br>对于上传的普通字段，可以通过 <code>settings.DATA_UPLOAD_MAX_NUMBER_FIELDS</code> 限制上传的字段个数，不包含文件个数，以及通过 <code>settings.DATA_UPLOAD_MAX_MEMORY_SIZE</code> 限制字段值长度和的上限，不包括文件大小。</p>
-<p>对于上传的文件，<code>MultiPartParser class</code>本身没有具体的逻辑，而是提供了一套处理机制，由提供的实现 <code>class FileUploadHandler</code> 的类完成处理。可以提供多个handler，通过参数 <code>settings.FILE_UPLOAD_HANDLERS</code> 配置，有默认值，参考文档：<a href="https://docs.djangoproject.com/en/1.11/topics/http/file-uploads/#upload-handlers" target="_blank" rel="noopener">link</a>。这些handler会对每一个Request初始化一次，然后使用同一个handler instance处理request内所有的文件上传信息，根据代码Django遵循了POST数据内每一个 form field or file chunk 都是顺序连续出现的，不会有交叉。<br>MultiPartParser循环读取上传文件的每个chunk，然后循环调用每个handlers处理当前chunk。每个handlers最后返回一个Filelike object，因此理论上上传一个文件，server端会产生len(handlers)个文件对象，但是我们通过FILES[FILENAME]只会返回一个object，这是因为FILES是 <code>django.utils.datastructures.MultiValueDict</code> 类型，接口类似dict，但是逻辑不同，参考代码：<a href="https://docs.djangoproject.com/en/1.11/_modules/django/utils/datastructures/" target="_blank" rel="noopener">link</a>。<br>GET &amp; POST 类型为 <code>class QueryDict(MultiValueDict)</code>，集成增加了 mutable 开关。</p>
-<p>看到这里我们知道file upload handler的设置是全局的，如果想针对某个接口做定制化的配置并不能直接达到目的。那么如果在业务代码收到request object时设置 <code>http.HttpRequest::upload_handlers</code> 字段也是可以的，只要代码中的middlewares，或其他部分没有使用过POST或FILES参数。<br>在某一个时间点上是可以做到的，但是随着项目迭代这种约定很容易被破坏。</p>
-<p>参考链接：</p>
-<ol>
-<li><a href="https://docs.djangoproject.com/en/1.11/topics/http/file-uploads/#id1" target="_blank" rel="noopener">Django 1.11 Doc: Modifying upload handlers on the fly</a></li>
-<li><a href="https://docs.djangoproject.com/en/1.11/ref/files/uploads/#writing-custom-upload-handlers" target="_blank" rel="noopener">Django 1.11 Doc: Writing custom upload handlers</a></li>
-</ol>
-<h1 id="Process"><a href="#Process" class="headerlink" title="Process"></a>Process</h1><p>接下来通过<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">response = WSGIHandler::BaseHandler.get_response(request)</span><br></pre></td></tr></table></figure></p>
-<p>进入处理流程。</p>
-<p>get_response() 主要逻辑就是调用 middleware_chain。<code>settings.MIDDLEWARE</code> 是按顺序执行的，不要被初始化时的 <code>reversed(settings.MIDDLEWARE)</code> 操作混淆。<br>初始化middleware_chain时首先会插入 <code>BaseHandler::_get_response()</code>， 该函数在调用链中最后执行，也就是在该函数里走入url dispatch逻辑，并获取业务代码产生的response object。</p>
-<p><code>settings.ROOT_URLCONF</code> 配置了 url dispatch patterns。</p>
-<h1 id="Response"><a href="#Response" class="headerlink" title="Response"></a>Response</h1><h2 id="python-manage-py-runserver-方式启动"><a href="#python-manage-py-runserver-方式启动" class="headerlink" title="python manage.py runserver 方式启动"></a>python manage.py runserver 方式启动</h2><p>server实现为 <code>django.core.servers.basehttp.WSGIServer</code> 类，该类继承自python标准库的类：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wsgiref.simple_server.WSGIServer(server_address, RequestHandlerClass)</span><br></pre></td></tr></table></figure></p>
-<p>manual: <a href="https://docs.python.org/3.6/library/wsgiref.html?highlight=simple_server#wsgiref.simple_server.WSGIServer" target="_blank" rel="noopener">link</a></p>
-<p>处理逻辑入口为RequestHandlerClass::handle()函数，Django的继承实现类为 <code>django.core.servers.basehttp.WSGIRequestHandler</code>。</p>
-<p>处理框架在 <code>class wsgiref.handlers.BaesHandler</code> 里：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseHandler</span>:</span></span><br><span class="line">    <span class="string">"""Manage the invocation of a WSGI application"""</span></span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self, application)</span>:</span></span><br><span class="line">        <span class="string">"""Invoke the application"""</span></span><br><span class="line">        <span class="comment"># Note to self: don't move the close()!  Asynchronous servers shouldn't</span></span><br><span class="line">        <span class="comment"># call close() from finish_response(), so if you close() anywhere but</span></span><br><span class="line">        <span class="comment"># the double-error branch here, you'll break asynchronous servers by</span></span><br><span class="line">        <span class="comment"># prematurely closing.  Async servers must return from 'run()' without</span></span><br><span class="line">        <span class="comment"># closing if there might still be output to iterate over.</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.setup_environ()</span><br><span class="line">            self.result = application(self.environ, self.start_response)</span><br><span class="line">            self.finish_response()</span><br><span class="line">        <span class="keyword">except</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.handle_error()</span><br><span class="line">            <span class="keyword">except</span>:</span><br><span class="line">                <span class="comment"># If we get an error handling an error, just give up already!</span></span><br><span class="line">                self.close()</span><br><span class="line">                <span class="keyword">raise</span>   <span class="comment"># ...and let the actual server figure it out.</span></span><br><span class="line">                </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">finish_response</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="string">"""Send any iterable data, then close self and the iterable</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        Subclasses intended for use in asynchronous servers will</span></span><br><span class="line"><span class="string">        want to redefine this method, such that it sets up callbacks</span></span><br><span class="line"><span class="string">        in the event loop to iterate over the data, and to call</span></span><br><span class="line"><span class="string">        'self.close()' once the response is finished.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> self.result_is_file() <span class="keyword">or</span> <span class="keyword">not</span> self.sendfile():</span><br><span class="line">                <span class="keyword">for</span> data <span class="keyword">in</span> self.result:</span><br><span class="line">                    self.write(data)</span><br><span class="line">                self.finish_content()</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            self.close()</span><br></pre></td></tr></table></figure></p>
-<p>self.result 即Django框架返回的 response object，必须是一个generator，可以迭代。<br>Django response有 stream HTTP response &amp; normal HTTP response 两种返回值，在内部已经统一封装成Iterator，对外无区别。</p>
-<h2 id="uWSGI-方式启动"><a href="#uWSGI-方式启动" class="headerlink" title="uWSGI 方式启动"></a>uWSGI 方式启动</h2><p><em>todo</em></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/07/request-processing-in-django/" data-id="cjonvdpc4000t6wfywd6wrsyk" class="article-share-link">Share</a-->
-      
-        <a href="http://kmiku7.github.io/2018/02/07/request-processing-in-django/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Django/">Django</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/zh/">zh</a></li></ul>
 
     </footer>
   </div>
@@ -498,7 +542,7 @@ ga('send', 'pageview');
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Nginx/">Nginx</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Nginx/">Nginx</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Squid/">Squid</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -525,7 +569,7 @@ ga('send', 'pageview');
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
     </div>
   </div>
 
@@ -535,6 +579,10 @@ ga('send', 'pageview');
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/">Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?</a>
+          </li>
         
           <li>
             <a href="/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/">Why uploading large file using Requests is very slow?</a>
@@ -550,10 +598,6 @@ ga('send', 'pageview');
         
           <li>
             <a href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/">OpenTSDB Code Reading: 3. Commands</a>
-          </li>
-        
-          <li>
-            <a href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/">OpenTSDB Code Reading: 2. Server Framework</a>
           </li>
         
       </ul>

@@ -3,17 +3,19 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Archives: 2018 | kmiku7&#39;s blog</title>
-  
-    <meta name="robots" content="noindex, follow">
+  <title>Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;? | kmiku7&#39;s blog</title>
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="kmiku7&#39;s blog">
-<meta property="og:url" content="http://kmiku7.github.io/archives/2018/index.html">
+  <meta name="description" content="We have a storage system which doesn&amp;#39;t provide http api to access its content. So I write a proxy service using Django to map http request to storage systems&amp;#39;s protocol. What proxy service doe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?">
+<meta property="og:url" content="http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/index.html">
 <meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="We have a storage system which doesn&amp;#39;t provide http api to access its content. So I write a proxy service using Django to map http request to storage systems&amp;#39;s protocol. What proxy service doe">
+<meta property="og:updated_time" content="2018-11-21T10:55:35.936Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="kmiku7&#39;s blog">
+<meta name="twitter:title" content="Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?">
+<meta name="twitter:description" content="We have a storage system which doesn&amp;#39;t provide http api to access its content. So I write a proxy service using Django to map http request to storage systems&amp;#39;s protocol. What proxy service doe">
   
   
     <link rel="icon" href="/img/favicon.ico">
@@ -73,267 +75,71 @@ ga('send', 'pageview');
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-  
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2018" class="archive-year">2018</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/" class="archive-article-date">
-  <time datetime="2018-11-21T09:05:13.706Z" itemprop="datePublished">Nov 21</time>
+        <section id="main"><article id="post-Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/" class="article-date">
+  <time datetime="2018-11-21T09:05:13.706Z" itemprop="datePublished">Nov 21 2018</time>
 </a>
-      
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Squid/">Squid</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/">Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?</a>
+    <h1 class="article-title" itemprop="name">
+      Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?
     </h1>
   
 
-    </header>
-  </div>
-</article>
-  
+      </header>
     
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/" class="archive-article-date">
-  <time datetime="2018-11-16T09:39:24.657Z" itemprop="datePublished">Nov 16</time>
-</a>
+    <div class="article-entry" itemprop="articleBody">
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/">Why uploading large file using Requests is very slow?</a>
-    </h1>
-  
+        <p>We have a storage system which doesn&#39;t provide http api to access its content. So I write a proxy service using Django to map http request to storage systems&#39;s protocol. What proxy service does is bulding http headers and reading content from storage system and writing back to client.<br>For some reasons, I also need a cache layer above the proxy service and choose squid to act as such a role.</p>
+<p>I insert &#39;Cache-Control&#39; headers in response, when the representation expired squid will refresh it. When proxy receives request, we check &#39;If-Modified-Since&#39; header and return 304 code if the file doesn&#39;t changed.</p>
+<p>When the representation expired in squid and the client want to read the data, squid will make a request to proxy(originserver) and get a 304 code. But the client get a empty body! And squid print TCP_REFRESH_UNMODIFIED_ABORTED code in log. But the next request can get the complete data before it expires!</p>
+<p>According to squid&#39;s manual and code, TCP_REFRESH_UNMODIFIED_ABORTED can be divided to two parts: TCP_REFRESH_UNMODIFIED and _ABORTED. TCP_REFRESH_UNMODIFIED means the representation in client is valid. _ABORTED means write back failed. Transmission failure reason is that squid doesn&#39;t write the full data of representaion.</p>
+<p>I write proxy service using Django framework and return <code>django.http.HttpResponseNotModified</code> object if the file isn&#39;t changed. When django sends response, it will always add &#39;Content-Length&#39; header with value of content length. In this case, the &#39;Content-Length&#39; is ZERO. When squid get 304 response, it knows the local representation is valid, and send first <em>&#39;Content-Length&#39;</em> bytes of local representations to client, which is ZERO. When send finished, squid find the send length isn&#39;t same with the length of local represention, so it add a &#39;_ABORTED&#39; to squid status.<br>The code about django add &#39;Content-Length&#39; header is <a href="https://github.com/django/django/blob/master/django/middleware/common.py#L109" target="_blank" rel="noopener">here</a>.</p>
+<p>According to <a href="https://tools.ietf.org/html/rfc7232#section-4.1" target="_blank" rel="noopener">rfc7232#section-4.1</a>, we should not send &#39;Content-Length&#39; and we don&#39;t need it at all. But adding &#39;Content-Length&#39; header is the common mechanism in Django without any options. Currently in order to to solve this problem we set &#39;Content-Length&#39; by ourselves with represention&#39;s actual length.</p>
 
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/" class="archive-article-date">
-  <time datetime="2018-11-07T05:04:56.987Z" itemprop="datePublished">Nov 7</time>
-</a>
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/">Upgrading To A New Nginx Binary In Different Place On The Fly</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/" class="archive-article-date">
-  <time datetime="2018-03-27T08:36:16.193Z" itemprop="datePublished">Mar 27</time>
-</a>
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/" data-id="cjoqy6d100001qcfyf20s8qad" class="article-share-link">Share</a-->
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/">OpenTSDB Code Reading: 4. Query Command</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/" class="archive-article-date">
-  <time datetime="2018-03-23T11:44:49.000Z" itemprop="datePublished">Mar 23</time>
-</a>
+        <a href="http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/#disqus_thread" class="article-comment-link">Comments</a>
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/">OpenTSDB Code Reading: 3. Commands</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" class="archive-article-date">
-  <time datetime="2018-03-23T09:54:56.000Z" itemprop="datePublished">Mar 23</time>
-</a>
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/">OpenTSDB Code Reading: 2. Server Framework</a>
-    </h1>
-  
-
-    </header>
+    </footer>
   </div>
-</article>
   
     
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" class="archive-article-date">
-  <time datetime="2018-03-23T04:20:30.000Z" itemprop="datePublished">Mar 23</time>
-</a>
-      
+<nav id="article-nav">
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/">OpenTSDB Code Reading: 1. Code About UID</a>
-    </h1>
   
+    <a href="/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Why uploading large file using Requests is very slow?</div>
+    </a>
+  
+</nav>
 
-    </header>
-  </div>
+  
 </article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/23/rosout-rosconsole-code-reading/" class="archive-article-date">
-  <time datetime="2018-02-23T02:44:29.000Z" itemprop="datePublished">Feb 23</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/23/rosout-rosconsole-code-reading/">rosout, rosconsole code reading</a>
-    </h1>
-  
 
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/22/rosmaster-code-reading/" class="archive-article-date">
-  <time datetime="2018-02-22T09:01:22.000Z" itemprop="datePublished">Feb 22</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/22/rosmaster-code-reading/">rosmaster code reading</a>
-    </h1>
-  
 
-    </header>
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/22/roscore-code-reading/" class="archive-article-date">
-  <time datetime="2018-02-22T08:59:46.000Z" itemprop="datePublished">Feb 22</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/22/roscore-code-reading/">roscore code reading</a>
-    </h1>
-  
+</section>
 
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/07/request-processing-in-django/" class="archive-article-date">
-  <time datetime="2018-02-07T07:51:44.000Z" itemprop="datePublished">Feb 7</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/07/request-processing-in-django/">request processing in Django</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/" class="archive-article-date">
-  <time datetime="2018-02-07T07:03:05.000Z" itemprop="datePublished">Feb 7</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/07/difference-between-manage-py-runserver-and-uswgi/">difference between &#39;manage.py runserver&#39; and uswgi</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/" class="archive-article-date">
-  <time datetime="2018-02-02T04:05:15.000Z" itemprop="datePublished">Feb 2</time>
-</a>
-      
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2018/02/02/Solve-the-problem-of-uwsgi-uwsgi-response-write-body-do-TIMEOUT-error/">Solve  &#39;uwsgi_response_write_body_do() TIMEOUT !!!&#39; error</a>
-    </h1>
-  
-
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
 </section>
         
           <aside id="sidebar">
@@ -430,11 +236,13 @@ ga('send', 'pageview');
 <script>
   var disqus_shortname = 'kmiku7';
   
+  var disqus_url = 'http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/';
+  
   (function(){
     var dsq = document.createElement('script');
     dsq.type = 'text/javascript';
     dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
   })();
 </script>
