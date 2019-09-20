@@ -75,6 +75,203 @@ ga('send', 'pageview');
       <div class="outer">
         <section id="main">
   
+    <article id="post-OpenTSDB-Code-Reading-4-Query-Command" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/" class="article-date">
+  <time datetime="2018-03-27T08:36:16.000Z" itemprop="datePublished">Mar 27 2018</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/OpenTSDB/">OpenTSDB</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/">OpenTSDB Code Reading: 4. Query Command</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>http-api: api/query<br>code: class net.opentsdb.tsd.QueryRpc<br>document: <a href="http://opentsdb.net/docs/build/html/api_http/query/index.html" target="_blank" rel="noopener">HTTP API, Query</a></p>
+<p><strong>查询DEMO</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/api/query?start=2018/03/27-16:30:02&amp;m=sum:proc.net.bytes</span><br><span class="line"></span><br><span class="line">/api/query?start=2018/03/27-16:20:02&amp;m=sum:proc.net.bytes&#123;direction=in&#125;</span><br><span class="line"></span><br><span class="line">/api/query?start=2018/03/27-16:20:02&amp;m=none:1m-avg-none:proc.net.bytes&#123;direction=in&#125;</span><br><span class="line"></span><br><span class="line">/api/query?start=2018/03/27-16:30:02&amp;tsuid=sum:00015D00000100000100000A00007F00000B000081,00015D00000100000100000A00007F00000B000080</span><br></pre></td></tr></table></figure></p>
+<h2 id="解析请求"><a href="#解析请求" class="headerlink" title="解析请求"></a>解析请求</h2><p>解析请求参数，构造、填充到 <code>net.opentsdb.core.TSQuery</code> 对象中。<br>其中Metric &amp; TSUID参数的核心解析代码位于:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net.opentsdb.tsd.QueryRpc::parseMTypeSubQuery</span><br><span class="line">net.opentsdb.tsd.QueryRpc::parseTsuidTypeSubQuery</span><br></pre></td></tr></table></figure></p>
+<p>涉及的类：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">// 对应额一次 http/telnet 请求</span><br><span class="line">net.opentsdb.core.TSQuery</span><br><span class="line"></span><br><span class="line">// 对应一次请求中的一个 query</span><br><span class="line">net.opentsdb.core.TSSubQuery</span><br><span class="line"></span><br><span class="line">// A query to retrieve data from the TSDB.</span><br><span class="line">// interface</span><br><span class="line">net.opentsdb.core.Query</span><br><span class="line"></span><br><span class="line">// Non-synchronized implementation of interface Query.</span><br><span class="line">// 与 TSSubQuery 一一对应</span><br><span class="line">net.opentsdb.core.TsdbQuery</span><br><span class="line"></span><br><span class="line">// </span><br><span class="line">net.opentsdb.query.filter.TagVFilter</span><br></pre></td></tr></table></figure></p>
+<p>每个query真正执行入口位于:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.opentsdb.core.TsdbQuery::runAsync()</span><br></pre></td></tr></table></figure></p>
+<p>OpenTSDB 通过 scanner 过滤 time-range, metric, tagKV 筛选符合要求的数据，然后在本地再进行 aggregate, downsampling。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/" data-id="ck0s0k2fs0001tls6977dtelw" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HBase/">HBase</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NoSQL/">NoSQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-OpenTSDB-Code-Reading-3-Commands" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/" class="article-date">
+  <time datetime="2018-03-23T11:44:49.000Z" itemprop="datePublished">Mar 23 2018</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/OpenTSDB/">OpenTSDB</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/">OpenTSDB Code Reading: 3. Commands</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Class: net.opentsdb.tsd.RpcManager</p>
+<p>该类维护了HTTP/RPC Protocol下指令，以及具体执行对象的信息。</p>
+<h2 id="Commands"><a href="#Commands" class="headerlink" title="Commands"></a>Commands</h2><h3 id="Write"><a href="#Write" class="headerlink" title="Write"></a>Write</h3><h4 id="put"><a href="#put" class="headerlink" title="put"></a>put</h4><p>telnet: put<br>http-api: api/put<br>code: class PutDataPointRpc</p>
+<h5 id="qualifier-格式"><a href="#qualifier-格式" class="headerlink" title="qualifier 格式"></a>qualifier 格式</h5><p>Long比特位格式：<br>bit[0:2] 保存value length<br>bit[3] Float Flag<br><strong>毫秒时间戳</strong><br>bit[0:5] 保存flag<br>bit[6:27] 保存真实时间戳<br>bit[28:31] 全为1，java为大端，该信息保存在bytes[0]位置<br><strong>秒时间戳</strong><br>bit[0:3] 保存flag<br>bit[4:] 保存真实时间戳</p>
+<h5 id="秒与毫秒时间戳的区分"><a href="#秒与毫秒时间戳的区分" class="headerlink" title="秒与毫秒时间戳的区分"></a>秒与毫秒时间戳的区分</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Mask to verify a timestamp on 4 bytes in seconds */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> SECOND_MASK = <span class="number">0xFFFFFFFF00000000L</span>;</span><br></pre></td></tr></table></figure>
+<p>timestamp不超过<code>~SECOND_MASK</code>，则认为时间戳单位为秒。否则为毫秒。<br>参考代码：<a href="https://github.com/kmiku7/opentsdb/blob/comment-v2.3.0/src/core/TSDB.java#L967" target="_blank" rel="noopener">link</a></p>
+<h5 id="append模式与普通模式"><a href="#append模式与普通模式" class="headerlink" title="append模式与普通模式"></a>append模式与普通模式</h5><p>append模式下，统一小时内的数据都追加到同一列中，qualifer为<code>0x050000</code>，共三字节。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// File: AppendDataPoints.java</span></span><br><span class="line"><span class="comment">// Line: 41</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AppendDataPoints</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger LOG = LoggerFactory.getLogger(AppendDataPoints.class);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">/** The prefix ID of append columns */</span></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> APPEND_COLUMN_PREFIX = <span class="number">0x05</span>;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">/** The full column qualifier for append columns */</span></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span>[] APPEND_COLUMN_QUALIFIER = <span class="keyword">new</span> <span class="keyword">byte</span>[] &#123;</span><br><span class="line">    APPEND_COLUMN_PREFIX, <span class="number">0x00</span>, <span class="number">0x00</span>&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>References:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/writing.html#appends" target="_blank" rel="noopener">OpenTSDB, User Guide, Writing Data, Appends</a></li>
+</ul>
+<h5 id="compaction"><a href="#compaction" class="headerlink" title="compaction"></a>compaction</h5><p>class: </p>
+<ul>
+<li>net.opentsdb.core.CompactionQueue</li>
+<li>net.opentsdb.core.CompactionQueue.Compaction</li>
+<li>net.opentsdb.core.CompactionQueue.ColumnDatapointIterator</li>
+</ul>
+<p>非append模式下，每次有新数据写入，就会将rowkey插入到一个CompactionQueue，然后定期处理，该对象是一个Sorted Set，插入时有去重。</p>
+<p>CompactionQueue初始化时会启动一个thread处理任务。当前时间 - baseTime(rowkey) &gt; 3600秒，则会进行处理。</p>
+<h3 id="Read"><a href="#Read" class="headerlink" title="Read"></a>Read</h3><h4 id="Stats"><a href="#Stats" class="headerlink" title="Stats"></a>Stats</h4><p>telnet: stats<br>http-api: api/stats<br>http-ui: stats<br>code: class StatsRpc</p>
+<p>class: net.opentsdb.stats.StatsCollector<br>StatsCollector是一个抽象基类，接口实现中初始化一个StatsCollector类型对象，然后在各组件中通过调用collectStats()接口收集状态信息。<br>StatsCollector默认内部记录统计信息的格式为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">stats-name timestamp value tagk=tagv tagk=tav...</span><br></pre></td></tr></table></figure></p>
+<p>返回给用户的，没记录一条信息就会调用StatsCollector::emit(record-str)函数，子类实现emit函数，完成格式的状态。</p>
+<h4 id="Drop-Caches"><a href="#Drop-Caches" class="headerlink" title="Drop Caches"></a>Drop Caches</h4><p>telnet: dropcaches<br>http-api: api/dropcaches<br>http-ui: dropcaches<br>code: class DropCachesRpc</p>
+<p>metrics/tagk/tagv各对应一个UniqueId Instance，该类内部有 name &lt;-&gt; id 映射关系的缓存，该接口清空这三个对象内部缓存。<a href="https://github.com/kmiku7/opentsdb/blob/comment-v2.3.0/src/core/TSDB.java#L1276" target="_blank" rel="noopener">code link</a></p>
+<h4 id="Version"><a href="#Version" class="headerlink" title="Version"></a>Version</h4><p>telnet: version<br>http-api: api/version<br>http-ui: version<br>code: class RpcManager.Version</p>
+<p>获取实例的版本信息。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;short_revision&quot;: &quot;&quot;,</span><br><span class="line">    &quot;repo&quot;: &quot;/root/opentsdb-2.3.0/build&quot;,</span><br><span class="line">    &quot;host&quot;: &quot;***********&quot;,</span><br><span class="line">    &quot;version&quot;: &quot;2.3.0&quot;,</span><br><span class="line">    &quot;full_revision&quot;: &quot;&quot;,</span><br><span class="line">    &quot;repo_status&quot;: &quot;MODIFIED&quot;,</span><br><span class="line">    &quot;user&quot;: &quot;root&quot;,</span><br><span class="line">    &quot;branch&quot;: &quot;&quot;,</span><br><span class="line">    &quot;timestamp&quot;: &quot;1521782831&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过脚本<code>build-aux/gen_build_data.sh</code>生成BuildData.java文件，运行时读取该类的信息。</p>
+<h4 id="Exit"><a href="#Exit" class="headerlink" title="Exit"></a>Exit</h4><p>telnet: exit<br>code: class RpcManager.Exit</p>
+<p>关闭连接。</p>
+<h4 id="Help"><a href="#Help" class="headerlink" title="Help"></a>Help</h4><p>telnet: help<br>code: class RpcManager.Help</p>
+<p>返回telnet_commands列表。</p>
+<h4 id="HomePage"><a href="#HomePage" class="headerlink" title="HomePage"></a>HomePage</h4><p>http-ui: &quot;&quot;<br>code: class RpcManager.HomePage</p>
+<p>UI主页。</p>
+<h4 id="List-Aggregators"><a href="#List-Aggregators" class="headerlink" title="List Aggregators"></a>List Aggregators</h4><p>http-api: api/aggregators<br>http-ui: aggregators<br>code: class ListAggregators</p>
+<p>显示支持的聚合方式列表。</p>
+<h4 id="Static-File"><a href="#Static-File" class="headerlink" title="Static File"></a>Static File</h4><p>http-ui: favicon.ico|s<br>code: class StaticFileRpc</p>
+<p>返回 /s/[path/to/static/file] s之后的uri部分对应的静态文件。</p>
+<h4 id="Logs"><a href="#Logs" class="headerlink" title="Logs"></a>Logs</h4><p>http-ui: logs<br>code: class LogsRpc</p>
+<p>该接口有两类功能：</p>
+<ol>
+<li>获取日志信息，默认plain text格式，可加参数json。</li>
+<li>设置logger日志等级，参数 level, logger。<br><a href="https://logback.qos.ch/apidocs/src-html/ch/qos/logback/classic/Level.html#line.198" target="_blank" rel="noopener">level参数取值</a></li>
+</ol>
+<h4 id="Graph"><a href="#Graph" class="headerlink" title="Graph"></a>Graph</h4><p>http-ui: q<br>code: class GraphHandler</p>
+<h4 id="Suggest"><a href="#Suggest" class="headerlink" title="Suggest"></a>Suggest</h4><p>http-api: api/suggest<br>http-ui: suggest<br>code: SuggestRpc</p>
+<p>It&#39;s used for auto-complete entries and does not support wildcards.</p>
+<p>输入参数：</p>
+<ul>
+<li>type: metrics, tagk, tagv. required.</li>
+<li>q: optional, default &quot;&quot;.</li>
+<li>max: optional, default 25.</li>
+</ul>
+<h4 id="Annotation"><a href="#Annotation" class="headerlink" title="Annotation"></a>Annotation</h4><p>http-api: api/annotation|api/annotations<br>code: class AnnotationRpc</p>
+<h4 id="Show-Config"><a href="#Show-Config" class="headerlink" title="Show Config"></a>Show Config</h4><p>http-api: api/config<br>code: class RpcManager.ShowConfig</p>
+<p>两种请求</p>
+<ol>
+<li>api/config<br>返回运行实例的配置项。</li>
+<li>api/config/filters<br>返回所有的tag value filters信息。</li>
+</ol>
+<h4 id="Query"><a href="#Query" class="headerlink" title="Query"></a>Query</h4><p>http-api: api/query<br>code: class QueryRpc</p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/api_http/query/index.html" target="_blank" rel="noopener">HTTP API, /api/query</a></li>
+</ul>
+<h4 id="Search"><a href="#Search" class="headerlink" title="Search"></a>Search</h4><p>http-api: api/search<br>code: class SearchRpc</p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/api_http/search/index.html" target="_blank" rel="noopener">HTTP API, /api/search</a></li>
+</ul>
+<h4 id="Serializers"><a href="#Serializers" class="headerlink" title="Serializers"></a>Serializers</h4><p>http-api: api/serializers<br>code: class Serializers</p>
+<p>显示支持的序列化方式列表。</p>
+<h4 id="Tree"><a href="#Tree" class="headerlink" title="Tree"></a>Tree</h4><p>http-api: api/tree<br>code: class TreeRpc</p>
+<p>Reference:</p>
+<ul>
+<li><a href="http://opentsdb.net/docs/build/html/user_guide/trees.html" target="_blank" rel="noopener">User Guide, Trees</a></li>
+</ul>
+<ol>
+<li>/api/tree</li>
+<li>/api/tree/branch</li>
+<li>/api/tree/rule</li>
+<li>/api/tree/rules</li>
+<li>/api/tree/test</li>
+<li>/api/tree/collisions</li>
+<li>/api/tree/notmatched</li>
+</ol>
+<h4 id="UniqueId"><a href="#UniqueId" class="headerlink" title="UniqueId"></a>UniqueId</h4><p>http-api: api/uid<br>code: class UniqueIdRpc</p>
+<p>该接口有如下子功能：</p>
+<ol>
+<li><p>assign<br>给name分配uid。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/api/uid/assign?metric=nameA,nameB&amp;tagk=nameC,nameD&amp;tagv=nameE,nameF</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>uidmeta<br> 2.1. GET<br> 获取uid meta信息</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/api/uid/uidmeta?type=tagk&amp;uid=000013</span><br></pre></td></tr></table></figure>
+<p> 2.2. POST<br> 设置meta信息。<br> 2.3. DELETE<br> 删除meta信息。</p>
+</li>
+<li>tsmeta<br>Handles CRUD calls to individual TSMeta data entries</li>
+<li>rename<br>更改uid对应的名字，一次只能更新一个。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/api/uid/rename?tagk=OldName&amp;name=NewName</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h4 id="DieDieDie"><a href="#DieDieDie" class="headerlink" title="DieDieDie"></a>DieDieDie</h4><p>telnet: diediedie<br>http: diediedie<br>code: class DieDieDie</p>
+<p>关闭服务端。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/" data-id="ck0s0k2rb0009tls6pds3xb6o" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Bugfix/">Bugfix</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HBase/">HBase</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NoSQL/">NoSQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-OpenTSDB-Code-Reading-2-Server-Framework" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" class="article-date">
@@ -174,7 +371,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" data-id="cjoqy6d0v0000qcfyby3xgj8r" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/" data-id="ck0s0k2r20005tls6h2quipkq" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -256,7 +453,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" data-id="cjoqy6d160005qcfy6p3mu0kz" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/" data-id="ck0s0k2z5000ztls6shh0y9vz" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/03/23/OpenTSDB-code-reading-1-core-about-uid/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -333,193 +530,12 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/" data-id="cjoqy6d24001hqcfy2jqbtmxo" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/" data-id="ck0s0k3fl001otls6r4ghwclu" class="article-share-link">Share</a-->
       
         <a href="http://kmiku7.github.io/2018/02/23/rosout-rosconsole-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/logging/">logging</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros1/">ros1</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/rosconsole/">rosconsole</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roscore/">roscore</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/rosout/">rosout</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-rosmaster-code-reading" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/02/22/rosmaster-code-reading/" class="article-date">
-  <time datetime="2018-02-22T09:01:22.000Z" itemprop="datePublished">Feb 22 2018</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/ros/">ros</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/02/22/rosmaster-code-reading/">rosmaster code reading</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="参考资源"><a href="#参考资源" class="headerlink" title="参考资源"></a>参考资源</h1><ul>
-<li><a href="http://wiki.ros.org/rosmaster" target="_blank" rel="noopener">rosmaster wiki</a></li>
-<li><a href="https://docs.python.org/2/library/simplexmlrpcserver.html#SimpleXMLRPCServer.SimpleXMLRPCServer.register_instance" target="_blank" rel="noopener">Python2 SimpleXMLRPCServer manual</a><br>register_instane()注册实例中不以下划线开头，并且callable的对象。</li>
-</ul>
-<h1 id="代码路径入口"><a href="#代码路径入口" class="headerlink" title="代码路径入口"></a>代码路径入口</h1><ul>
-<li>rosmaster command<br><code>ros_comm/tools/rosmaster/scripts/rosmaster</code></li>
-<li>rosmaster logic entry<br><code>ros_comm/tools/rosmaster/src/rosmaster/main.py rosmaster_main()</code></li>
-</ul>
-<h1 id="implementation"><a href="#implementation" class="headerlink" title="implementation"></a>implementation</h1><p>核心逻辑入口在 Master class，实现在<code>ros_comm/tools/rosmaster/src/rosmaster/master.py</code>文件中。</p>
-<p>启动流程为：</p>
-<ol>
-<li>解析传入参数</li>
-<li>初始化 ROSMasterHandler</li>
-<li>初始化 XmlRpcNode(server)，并启动</li>
-<li>检查XmlRpcNode(server)状态，直到退出</li>
-</ol>
-<h2 id="ROSMasterHandler"><a href="#ROSMasterHandler" class="headerlink" title="ROSMasterHandler"></a>ROSMasterHandler</h2><p>最主要的业务逻辑都在这里，实现文件：<code>ros_comm/tools/rosmaster/src/rosmaster/master_api.py</code>。</p>
-<h3 id="对外导出的方法、功能"><a href="#对外导出的方法、功能" class="headerlink" title="对外导出的方法、功能"></a>对外导出的方法、功能</h3><h6 id="EXTERNAL-API"><a href="#EXTERNAL-API" class="headerlink" title="EXTERNAL API"></a>EXTERNAL API</h6><ol>
-<li>shutdown<br>Stop this server.</li>
-<li>getUri<br>Get the XML-RPC URI of this server.<br>通过xmlrpc server获取xmlrpc server的地址，有种先有鸡还是先有蛋的纠结。</li>
-<li>getPid<br>Get the PID of this server.</li>
-</ol>
-<h6 id="PARAMETER-SERVER-ROUNTINES"><a href="#PARAMETER-SERVER-ROUNTINES" class="headerlink" title="PARAMETER SERVER ROUNTINES"></a>PARAMETER SERVER ROUNTINES</h6><ol>
-<li>deleteParam</li>
-<li>setParam</li>
-<li>getParam</li>
-<li>searchParam</li>
-<li>subscribeParam</li>
-<li>unsubscribeParam</li>
-<li>hasParam</li>
-<li>getParamNames</li>
-</ol>
-<h6 id="NOTIFICATION-ROUTINES"><a href="#NOTIFICATION-ROUTINES" class="headerlink" title="NOTIFICATION ROUTINES"></a>NOTIFICATION ROUTINES</h6><ol>
-<li>param_update_task</li>
-</ol>
-<h6 id="SERVICE-PROVIDER"><a href="#SERVICE-PROVIDER" class="headerlink" title="SERVICE PROVIDER"></a>SERVICE PROVIDER</h6><ol>
-<li>registerService<br>Register the caller as a provider of the specified service.</li>
-<li>lookupService</li>
-<li>unregisterService</li>
-</ol>
-<h6 id="PUBLISH-SUBSCRIBE"><a href="#PUBLISH-SUBSCRIBE" class="headerlink" title="PUBLISH/SUBSCRIBE"></a>PUBLISH/SUBSCRIBE</h6><ol>
-<li>registerSubscriber</li>
-<li>unregisterSubscriber</li>
-<li>registerPublisher</li>
-<li>unregisterPublisher</li>
-</ol>
-<h6 id="GRAPH-STATE-APIS"><a href="#GRAPH-STATE-APIS" class="headerlink" title="GRAPH STATE APIS"></a>GRAPH STATE APIS</h6><ol>
-<li>lookupNode</li>
-<li>getPublishedTopics</li>
-<li>getTopicTypes</li>
-<li>getSystemState</li>
-</ol>
-<h3 id="核心逻辑"><a href="#核心逻辑" class="headerlink" title="核心逻辑"></a>核心逻辑</h3><ul>
-<li>信息的存储检索</li>
-<li>信息的订阅通知</li>
-</ul>
-
-      
-    </div>
-    <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/" data-id="cjoqy6d20001aqcfyquk3nftk" class="article-share-link">Share</a-->
-      
-        <a href="http://kmiku7.github.io/2018/02/22/rosmaster-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros1/">ros1</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roscore/">roscore</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roslaunch/">roslaunch</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-roscore-code-reading" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/02/22/roscore-code-reading/" class="article-date">
-  <time datetime="2018-02-22T08:59:46.000Z" itemprop="datePublished">Feb 22 2018</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/ros/">ros</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/02/22/roscore-code-reading/">roscore code reading</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p><strong><em>代码版本：<br>/rosdistro: indigo<br>/rosversion: 1.11.21</em></strong></p>
-<h1 id="参考资源链接"><a href="#参考资源链接" class="headerlink" title="参考资源链接"></a>参考资源链接</h1><ul>
-<li><a href="http://wiki.ros.org/roscore" target="_blank" rel="noopener">roscore wiki</a></li>
-<li><a href="http://blog.csdn.net/lewif/article/details/75112520" target="_blank" rel="noopener">ros源码分析(1)—roscore概况</a></li>
-<li><a href="http://www.cnblogs.com/wanghaoran/p/3189017.html" target="_blank" rel="noopener">Python中关于XML-RPC原理</a></li>
-</ul>
-<h1 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h1><p>/opt/ros/indigo/etc/ros/roscore.xml<br>这里配置随roscore一起启动的node。</p>
-<h1 id="启动的node-or-process"><a href="#启动的node-or-process" class="headerlink" title="启动的node or process"></a>启动的node or process</h1><ul>
-<li>/rosout/rosout: a rosout logging node</li>
-<li>ros master</li>
-<li>ros parameter server</li>
-<li>rosmaster</li>
-<li>process monitor</li>
-<li>parent xml-rpc server</li>
-</ul>
-<h1 id="roscore启动逻辑"><a href="#roscore启动逻辑" class="headerlink" title="roscore启动逻辑"></a>roscore启动逻辑</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ type roscore</span><br><span class="line">roscore is hashed (/opt/ros/indigo/bin/roscore)</span><br></pre></td></tr></table></figure>
-<p>核心代码为：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> roslaunch</span><br><span class="line">roslaunch.main([<span class="string">'roscore'</span>, <span class="string">'--core'</span>] + sys.argv[<span class="number">1</span>:])</span><br></pre></td></tr></table></figure></p>
-<p>这里传入的roscore没有作用，--core参数真正指定了启动roscore。配置文件名 roscore.xml 也是在代码中写死，根据版本号等信息拼接出来完整的配置文件路径。</p>
-<p>如果没有预先执行roscore，我们用roslaunch *.launch 启动node也会自动roscore相关的进程组件。分析代码，可以把处理逻辑总结为：roslaunch启动 *.launch 文件中配置的node，启动前先检查环境，如果没有启动roscore则先启动，如果已经启动了，则判断命令行参数中有没有 --core，如果有则报错，如果没有继续执行 *.launch 中的操作。</p>
-<p>roslaunch command demo:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ roslaunch package_name file.launch</span><br></pre></td></tr></table></figure></p>
-<h1 id="roslaunch-启动逻辑"><a href="#roslaunch-启动逻辑" class="headerlink" title="roslaunch 启动逻辑"></a>roslaunch 启动逻辑</h1><p>核心代码逻辑位于 <code>ros_comm/tools/roslaunch/src/roslaunch/parent.py ROSLaunchParent::start()</code>。</p>
-<h2 id="start-infrastructure"><a href="#start-infrastructure" class="headerlink" title="start infrastructure"></a>start infrastructure</h2><h3 id="load-ros-launch-file"><a href="#load-ros-launch-file" class="headerlink" title="load ros launch file"></a>load ros launch file</h3><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/config.py</code>。</p>
-<p>首先加载 roscore.xml 文件，然后加载命令行中执行的 launch file。参考代码注释：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># load the roscore file first. we currently have</span><br><span class="line"># last-declaration wins rules.  roscore is just a</span><br><span class="line"># roslaunch file with special load semantics</span><br></pre></td></tr></table></figure></p>
-<h3 id="start-process-monitor"><a href="#start-process-monitor" class="headerlink" title="start process monitor"></a>start process monitor</h3><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/pmon.py</code>。</p>
-<p><code>ProcessMonitor</code> 是一个继承自<code>Python::Thread</code>的类。其中另一个类<code>Process</code> 代表launch启动的一个进程，封装了进程的一些启动参数，是否是关键节点，如果异常退出是否重启等信息。然后将 Process instance 注册到 ProcessMonitor instance 进行监控。</p>
-<h3 id="start-roslaunch-runner-and-XMLRPC-server"><a href="#start-roslaunch-runner-and-XMLRPC-server" class="headerlink" title="start roslaunch runner and XMLRPC server"></a>start roslaunch runner and XMLRPC server</h3><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/server.py</code>。</p>
-<p>这里启动了一个xmlrpc server，实现在class ROSLaunchParentNode，并注册了一些方法。启动后立即创建一个client去连接server，确认启动成功。</p>
-<h2 id="initialize-the-actual-runner-and-launch"><a href="#initialize-the-actual-runner-and-launch" class="headerlink" title="initialize the actual runner and launch"></a>initialize the actual runner and launch</h2><p>代码文件 <code>ros_comm/tools/roslaunch/src/roslaunch/launch.py</code>。</p>
-<p>这里创建一个ROSLaunchRunner instance，这个实例负责启动 launch file 中配置的node。在调用 <code>launch()</code> 启动时，会检测roscore环境是否启动，如果没有则启动：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_setup</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Setup the state of the ROS network, including the parameter</span></span><br><span class="line"><span class="string">    server state and core services</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    ...           </span><br><span class="line"></span><br><span class="line">    <span class="comment"># start up the core: master + core nodes defined in core.xml</span></span><br><span class="line">    <span class="comment"># 启动 ros master</span></span><br><span class="line">    self._launch_master()</span><br><span class="line">    <span class="comment"># 启动 roscore 包含的 nodes</span></span><br><span class="line">    self._launch_core_nodes()</span><br></pre></td></tr></table></figure></p>
-<p>在启动时，XmlLoader对象用于解析launch file和roscore.xml，并对 core nodes 和 normal nodes分组管理，接口中有参数指定要解析的xml配置文件是否属于roscore的，由调用方负责传入，如果是，其中包含的nodes放入 core nodes中管理。<br>启动 core nodes 时，如果node已经存在，则跳过。启动 normal nodes 时，如果node已经存在，则杀死已存在的node，再启动新node。</p>
-<p>ros master 则是通过<code>rosmaster --core ...</code>方式启动。</p>
-<h1 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h1><ul>
-<li>roscore代表着启动整套基础环境。</li>
-<li>parameter server并不是一个单独存在的Server，而是rosmaster的一部分。</li>
-</ul>
-
-      
-    </div>
-    <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/02/22/roscore-code-reading/" data-id="cjoqy6d22001cqcfy507squ4i" class="article-share-link">Share</a-->
-      
-        <a href="http://kmiku7.github.io/2018/02/22/roscore-code-reading/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros/">ros</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ros1/">ros1</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roscore/">roscore</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/roslaunch/">roslaunch</a></li></ul>
 
     </footer>
   </div>
@@ -542,7 +558,7 @@ ga('send', 'pageview');
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Nginx/">Nginx</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Squid/">Squid</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Database/">Database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Nginx/">Nginx</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Squid/">Squid</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -551,7 +567,7 @@ ga('send', 'pageview');
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Bugfix/">Bugfix</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DATABASE/">DATABASE</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HBase/">HBase</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NoSQL/">NoSQL</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">10</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/logging/">logging</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros1/">ros1</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosconsole/">rosconsole</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roscore/">roscore</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roslaunch/">roslaunch</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosout/">rosout</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">11</span></li></ul>
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Bugfix/">Bugfix</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DATABASE/">DATABASE</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Design/">Design</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HBase/">HBase</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/">Linux</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NoSQL/">NoSQL</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Pagination/">Pagination</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Partition/">Partition</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Requests/">Requests</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Sharding/">Sharding</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Shell/">Shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Squid/">Squid</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/curl/">curl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libcurl/">libcurl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/logging/">logging</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operation/">operation</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros1/">ros1</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosconsole/">rosconsole</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roscore/">roscore</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roslaunch/">roslaunch</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosout/">rosout</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sudo/">sudo</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">11</span></li></ul>
     </div>
   </div>
 
@@ -560,7 +576,7 @@ ga('send', 'pageview');
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Bugfix/" style="font-size: 13.33px;">Bugfix</a> <a href="/tags/DATABASE/" style="font-size: 13.33px;">DATABASE</a> <a href="/tags/Django/" style="font-size: 11.67px;">Django</a> <a href="/tags/HBase/" style="font-size: 13.33px;">HBase</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/NoSQL/" style="font-size: 13.33px;">NoSQL</a> <a href="/tags/OpenTSDB/" style="font-size: 13.33px;">OpenTSDB</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 13.33px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 18.33px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 16.67px;">cpp</a> <a href="/tags/data-structure/" style="font-size: 13.33px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 10px;">en</a> <a href="/tags/golang/" style="font-size: 13.33px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 13.33px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/logging/" style="font-size: 10px;">logging</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 13.33px;">ros</a> <a href="/tags/ros1/" style="font-size: 13.33px;">ros1</a> <a href="/tags/rosconsole/" style="font-size: 10px;">rosconsole</a> <a href="/tags/roscore/" style="font-size: 13.33px;">roscore</a> <a href="/tags/roslaunch/" style="font-size: 11.67px;">roslaunch</a> <a href="/tags/rosout/" style="font-size: 10px;">rosout</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 13.33px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 11.67px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 20px;">zh</a>
+      <a href="/tags/Bugfix/" style="font-size: 12.86px;">Bugfix</a> <a href="/tags/DATABASE/" style="font-size: 15.71px;">DATABASE</a> <a href="/tags/Design/" style="font-size: 10px;">Design</a> <a href="/tags/Django/" style="font-size: 12.86px;">Django</a> <a href="/tags/HBase/" style="font-size: 14.29px;">HBase</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/Nginx/" style="font-size: 11.43px;">Nginx</a> <a href="/tags/NoSQL/" style="font-size: 14.29px;">NoSQL</a> <a href="/tags/OpenTSDB/" style="font-size: 14.29px;">OpenTSDB</a> <a href="/tags/Pagination/" style="font-size: 10px;">Pagination</a> <a href="/tags/Partition/" style="font-size: 10px;">Partition</a> <a href="/tags/Python/" style="font-size: 17.14px;">Python</a> <a href="/tags/Requests/" style="font-size: 10px;">Requests</a> <a href="/tags/Sharding/" style="font-size: 10px;">Sharding</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Squid/" style="font-size: 10px;">Squid</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 12.86px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 20px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 15.71px;">cpp</a> <a href="/tags/curl/" style="font-size: 10px;">curl</a> <a href="/tags/data-structure/" style="font-size: 12.86px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 12.86px;">en</a> <a href="/tags/golang/" style="font-size: 12.86px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 12.86px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/libcurl/" style="font-size: 10px;">libcurl</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/logging/" style="font-size: 10px;">logging</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/operation/" style="font-size: 10px;">operation</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 12.86px;">ros</a> <a href="/tags/ros1/" style="font-size: 12.86px;">ros1</a> <a href="/tags/rosconsole/" style="font-size: 10px;">rosconsole</a> <a href="/tags/roscore/" style="font-size: 12.86px;">roscore</a> <a href="/tags/roslaunch/" style="font-size: 11.43px;">roslaunch</a> <a href="/tags/rosout/" style="font-size: 10px;">rosout</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/sudo/" style="font-size: 10px;">sudo</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 12.86px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 11.43px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 18.57px;">zh</a>
     </div>
   </div>
 
@@ -569,7 +585,7 @@ ga('send', 'pageview');
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
     </div>
   </div>
 
@@ -581,6 +597,14 @@ ga('send', 'pageview');
       <ul>
         
           <li>
+            <a href="/2019/09/20/Keep-environment-variables-with-sudo-command/">Keep environment variables with sudo command.</a>
+          </li>
+        
+          <li>
+            <a href="/2019/08/01/Do-Pagination-With-Table-Database-Sharding/">Do Pagination With Table/Database Sharding</a>
+          </li>
+        
+          <li>
             <a href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/">Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?</a>
           </li>
         
@@ -590,14 +614,6 @@ ga('send', 'pageview');
         
           <li>
             <a href="/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/">Upgrading To A New Nginx Binary In Different Place On The Fly</a>
-          </li>
-        
-          <li>
-            <a href="/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/">OpenTSDB Code Reading: 4. Query Command</a>
-          </li>
-        
-          <li>
-            <a href="/2018/03/23/OpenTSDB-Code-Reading-3-Commands/">OpenTSDB Code Reading: 3. Commands</a>
           </li>
         
       </ul>
@@ -612,7 +628,7 @@ ga('send', 'pageview');
   
   <div class="outer">
     <div id="footer-info" class="inner">
-      &copy; 2018 kmiku7<br>
+      &copy; 2019 kmiku7<br>
       Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
     </div>
   </div>

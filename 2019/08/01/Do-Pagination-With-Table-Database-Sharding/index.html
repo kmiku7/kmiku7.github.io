@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Do Pagination With Table/Database Sharding | kmiku7&#39;s blog</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="分表分库下的分页方案为什么分表分库这里就不说了，聊一下在这种场景下如何进行分页查询。 现有方案业界难题-“跨库分页”的四种方案 里提了四种方案，这里线逐个分析一下： 方案1: 全局视野法这种方法获取的结果是绝对准确的，但是缺点正如文章里所说：随着翻页的进行，性能越来越低。 方案2: 业务折衷法-禁止跳页查询这种方案结果也是准确的，并且每次查询的性能也是稳定的。缺点是不能随机跳转到某页。但是考虑一下">
+<meta name="keywords" content="DATABASE,Pagination,Design,Sharding,Partition">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Do Pagination With Table&#x2F;Database Sharding">
+<meta property="og:url" content="http://kmiku7.github.io/2019/08/01/Do-Pagination-With-Table-Database-Sharding/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="分表分库下的分页方案为什么分表分库这里就不说了，聊一下在这种场景下如何进行分页查询。 现有方案业界难题-“跨库分页”的四种方案 里提了四种方案，这里线逐个分析一下： 方案1: 全局视野法这种方法获取的结果是绝对准确的，但是缺点正如文章里所说：随着翻页的进行，性能越来越低。 方案2: 业务折衷法-禁止跳页查询这种方案结果也是准确的，并且每次查询的性能也是稳定的。缺点是不能随机跳转到某页。但是考虑一下">
+<meta property="og:updated_time" content="2019-09-20T10:35:53.277Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Do Pagination With Table&#x2F;Database Sharding">
+<meta name="twitter:description" content="分表分库下的分页方案为什么分表分库这里就不说了，聊一下在这种场景下如何进行分页查询。 现有方案业界难题-“跨库分页”的四种方案 里提了四种方案，这里线逐个分析一下： 方案1: 全局视野法这种方法获取的结果是绝对准确的，但是缺点正如文章里所说：随着翻页的进行，性能越来越低。 方案2: 业务折衷法-禁止跳页查询这种方案结果也是准确的，并且每次查询的性能也是稳定的。缺点是不能随机跳转到某页。但是考虑一下">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Do-Pagination-With-Table-Database-Sharding" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/01/Do-Pagination-With-Table-Database-Sharding/" class="article-date">
+  <time datetime="2019-08-01T08:59:59.000Z" itemprop="datePublished">Aug 1 2019</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Database/">Database</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Do Pagination With Table/Database Sharding
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="分表分库下的分页方案"><a href="#分表分库下的分页方案" class="headerlink" title="分表分库下的分页方案"></a>分表分库下的分页方案</h1><p>为什么分表分库这里就不说了，聊一下在这种场景下如何进行分页查询。</p>
+<h2 id="现有方案"><a href="#现有方案" class="headerlink" title="现有方案"></a>现有方案</h2><p><a href="https://mp.weixin.qq.com/s?__biz=MjM5ODYxMDA5OQ==&amp;mid=2651959942&amp;idx=1&amp;sn=e9d3fe111b8a1d44335f798bbb6b9eea&amp;chksm=bd2d075a8a5a8e4cad985b847778aa83056e22931767bb835132c04571b66d5434020fd4147f&amp;scene=21#wechat_redirect" target="_blank" rel="noopener">业界难题-“跨库分页”的四种方案</a> 里提了四种方案，这里线逐个分析一下：</p>
+<h3 id="方案1-全局视野法"><a href="#方案1-全局视野法" class="headerlink" title="方案1: 全局视野法"></a>方案1: 全局视野法</h3><p>这种方法获取的结果是绝对准确的，但是缺点正如文章里所说：随着翻页的进行，性能越来越低。</p>
+<h3 id="方案2-业务折衷法-禁止跳页查询"><a href="#方案2-业务折衷法-禁止跳页查询" class="headerlink" title="方案2: 业务折衷法-禁止跳页查询"></a>方案2: 业务折衷法-禁止跳页查询</h3><p>这种方案结果也是准确的，并且每次查询的性能也是稳定的。缺点是不能随机跳转到某页。<br>但是考虑一下用户需要跳转的任意页面动机，我们是不是可以通过查询条件的方式满足用户这方面的需求？比如显示的条目是按照时间递增排序的，当前显示的条目时间是2019/08/01，用户想看2019/08/10号的数据，然后心里估算了一下大约在第10页，然后想直接跳转到Page 10。那么我们是不是可以通过提供一个选择日期范围的功能满足用户的这个需求？</p>
+<p>整体来看这种分页方式是最优的，和一些查询功能搭配起来能够满足各种使用场景。</p>
+<h3 id="方案3-业务折衷法-允许模糊数据"><a href="#方案3-业务折衷法-允许模糊数据" class="headerlink" title="方案3: 业务折衷法-允许模糊数据"></a>方案3: 业务折衷法-允许模糊数据</h3><p>如果业务方能够接受，这种方法是没有问题的。但是一定要注意前提：各分库所有非partition key属性，在各个分库上的数据分布，统计概率情况是一致的。<br>举例来说，业务方使用条目的创建时间排序，现在分两个表A和B，在A表每分钟有10条新纪录写入，B库每分钟只有2条记录写入。那么在页面显示里，页码数越大，不同表返回条目的创建时间差别也更明显。那么如果用户想跳转到某一页找某一天写入的记录，用户心里会怎么估算跳转的页码呢？</p>
+<p><strong>这里的模糊指的是：排序顺序不完全准确，但显示的条目不会少，不会重复！</strong></p>
+<h3 id="方案4-终极武器-二次查询法"><a href="#方案4-终极武器-二次查询法" class="headerlink" title="方案4: 终极武器-二次查询法"></a>方案4: 终极武器-二次查询法</h3><p><strong>首先说结论，这个方案是不精确的！</strong></p>
+<p>具体操作步骤原文。这里举一个范例说明下为什么是不准的。<br>现在有两张表A和B，有一列属性名字为priority。A表有1万行记录，priority取值范围为[1,1w]，B表有1万行记录，priority取值范围为[1w+1, 2w]，假设priority属性是唯一的。<br>现在要按照priority属性排序然后分页，每页10条记录。按照原文的操作步骤，我们来计算一下第1k页的元素。  </p>
+<p>第一步：<br>select * from A(B) order by priority offset 5000 limit 5<br>Priority Range From A:  [5001, 5005]<br>Priority Range From B:  [15001, 15005]  </p>
+<p>第二、三步：<br>select <em> from A where priority between 5001, 5005<br>select </em> from B where priority between 5001, 15005  </p>
+<p><strong>这里的问题：B表的查询返回大量的数据！5005行。</strong></p>
+<p>第四、五步：<br>priority==5001 在全局里的offset是5000。然后上面返回的两个结果集合并排序，得到的offset 1w的记录为 [14996, 15005]。但是从数据集来看，应该返回的是[1w, 1w+10]。<br><strong>原因是只对&quot;第二、三步&quot;的结果集合并排序，忽略了其他元素的影响。</strong></p>
+<p><strong>另外一个问题：返回的每页的数据集，是连续的吗？会遗漏数据吗？</strong><br>回答是：不是，会遗漏数据，并且会出现重复数据。<br>我们用反证法想一想，priority属性值唯一，2万条记录，取值范围为[1,2w]。<br>每页10条元素，共2000页。通过该方案第1000页记录的priority范围为[14996, 15005]。<br>那么在1-999页，需要显示priority范围为[1,14995]，多于页面能显示的记录数，肯定有条目遗漏。<br>在1001-2000页，需要显示priority范围为[15006, 2w]，少于页面能显示的条目书，所以肯定要有重复。</p>
+<h2 id="我们的方案"><a href="#我们的方案" class="headerlink" title="我们的方案"></a>我们的方案</h2><p>我们项目里目前也遇到了类似问题，为什么分表这里不说了。并且有个问题是分表后各个表里的数据分布是不均匀的，我们还做了分库，某些库的网络链接条件特别差，带宽小，延迟高。</p>
+<p>我们的思路是利用计数排序的思想。举个例子，还是有一列整型值priority。</p>
+<p>第一步：将记录按照<code>floor(priority / VALUE_LENGTH)</code>分组计数。得到类似如下结果：</p>
+<table>
+<thead>
+<tr>
+<th>priority Range</th>
+<th>A表中元素个数</th>
+<th>B表中元素个数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[0*VALUE_LENGTH, 1*LAVLUE_LENGHT)</td>
+<td>10</td>
+<td>20</td>
+</tr>
+<tr>
+<td>[1*VALUE_LENGTH, 2*LAVLUE_LENGHT)</td>
+<td>4</td>
+<td>0</td>
+</tr>
+<tr>
+<td>[2*VALUE_LENGTH, 3*LAVLUE_LENGHT)</td>
+<td>14</td>
+<td>11</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<p>第二步：通过第一个的分段计数，我们可以知道 [offset, offset+limit) 的元素的priority值分布区间。然后select id, priority from A(B) where priority between RANGE_BEGIN and RANGE_END。将多表的结果集合并排序后就可以找到分页范围内的元素。<br>比如在按照上表的结果，每页显示10条记录，我们想查询第4页的结果，可知 offset 30 limit 10 的元素priorityt的范围是 [1*VALUE_LENGTH, 3*LAVLUE_LENGHT)，然后到每张表里查询该范围的记录。</p>
+<p>第三步：根据id到各个表里获取完整的原始数据。</p>
+<p>每张表都需要三次查询。其中第一步的查询结果可以做缓存。如果range length空间够小，第二步里每张表的查询结果集也不会很大，所以可以直接取完整的数据行，省去第三部的按照id取元素。<br>整体来看即避免了多次数据查询，也避免了结果集过大。</p>
+<p>这种方法也很类似搜索引擎里的架构方案。</p>
+<p>另外还有其他一些方案：比如数据分表分库，但是所有的数据的索引保存在一个表里。然后查询时通过索引表获取记录id，然后到各个库/表里获取对应元素。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2019/08/01/Do-Pagination-With-Table-Database-Sharding/" data-id="ck0s0k2e30000tls6d0v1ifu7" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2019/08/01/Do-Pagination-With-Table-Database-Sharding/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Design/">Design</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Pagination/">Pagination</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Partition/">Partition</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Sharding/">Sharding</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/09/20/Keep-environment-variables-with-sudo-command/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Keep environment variables with sudo command.
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Database/">Database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Nginx/">Nginx</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Squid/">Squid</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Bugfix/">Bugfix</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DATABASE/">DATABASE</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Design/">Design</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HBase/">HBase</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/">Linux</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NoSQL/">NoSQL</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Pagination/">Pagination</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Partition/">Partition</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Requests/">Requests</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Sharding/">Sharding</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Shell/">Shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Squid/">Squid</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/curl/">curl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libcurl/">libcurl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/logging/">logging</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operation/">operation</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros1/">ros1</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosconsole/">rosconsole</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roscore/">roscore</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roslaunch/">roslaunch</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosout/">rosout</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sudo/">sudo</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">11</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Bugfix/" style="font-size: 12.86px;">Bugfix</a> <a href="/tags/DATABASE/" style="font-size: 15.71px;">DATABASE</a> <a href="/tags/Design/" style="font-size: 10px;">Design</a> <a href="/tags/Django/" style="font-size: 12.86px;">Django</a> <a href="/tags/HBase/" style="font-size: 14.29px;">HBase</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/Nginx/" style="font-size: 11.43px;">Nginx</a> <a href="/tags/NoSQL/" style="font-size: 14.29px;">NoSQL</a> <a href="/tags/OpenTSDB/" style="font-size: 14.29px;">OpenTSDB</a> <a href="/tags/Pagination/" style="font-size: 10px;">Pagination</a> <a href="/tags/Partition/" style="font-size: 10px;">Partition</a> <a href="/tags/Python/" style="font-size: 17.14px;">Python</a> <a href="/tags/Requests/" style="font-size: 10px;">Requests</a> <a href="/tags/Sharding/" style="font-size: 10px;">Sharding</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Squid/" style="font-size: 10px;">Squid</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 12.86px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 20px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 15.71px;">cpp</a> <a href="/tags/curl/" style="font-size: 10px;">curl</a> <a href="/tags/data-structure/" style="font-size: 12.86px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 12.86px;">en</a> <a href="/tags/golang/" style="font-size: 12.86px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 12.86px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/libcurl/" style="font-size: 10px;">libcurl</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/logging/" style="font-size: 10px;">logging</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/operation/" style="font-size: 10px;">operation</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 12.86px;">ros</a> <a href="/tags/ros1/" style="font-size: 12.86px;">ros1</a> <a href="/tags/rosconsole/" style="font-size: 10px;">rosconsole</a> <a href="/tags/roscore/" style="font-size: 12.86px;">roscore</a> <a href="/tags/roslaunch/" style="font-size: 11.43px;">roslaunch</a> <a href="/tags/rosout/" style="font-size: 10px;">rosout</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/sudo/" style="font-size: 10px;">sudo</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 12.86px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 11.43px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 18.57px;">zh</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/09/20/Keep-environment-variables-with-sudo-command/">Keep environment variables with sudo command.</a>
+          </li>
+        
+          <li>
+            <a href="/2019/08/01/Do-Pagination-With-Table-Database-Sharding/">Do Pagination With Table/Database Sharding</a>
+          </li>
+        
+          <li>
+            <a href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/">Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?</a>
+          </li>
+        
+          <li>
+            <a href="/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/">Why uploading large file using Requests is very slow?</a>
+          </li>
+        
+          <li>
+            <a href="/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/">Upgrading To A New Nginx Binary In Different Place On The Fly</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2019/08/01/Do-Pagination-With-Table-Database-Sharding/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

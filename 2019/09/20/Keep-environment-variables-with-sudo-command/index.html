@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Keep environment variables with sudo command. | kmiku7&#39;s blog</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="We have a complicated shell script, and need root permission to finish some operations. But this script may be executed by everyone and we don&amp;#39;t want to leak root password, we still don&amp;#39;t want">
+<meta name="keywords" content="Linux,Shell,sudo,en">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Keep environment variables with sudo command.">
+<meta property="og:url" content="http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/index.html">
+<meta property="og:site_name" content="kmiku7&#39;s blog">
+<meta property="og:description" content="We have a complicated shell script, and need root permission to finish some operations. But this script may be executed by everyone and we don&amp;#39;t want to leak root password, we still don&amp;#39;t want">
+<meta property="og:updated_time" content="2019-09-20T11:03:41.125Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Keep environment variables with sudo command.">
+<meta name="twitter:description" content="We have a complicated shell script, and need root permission to finish some operations. But this script may be executed by everyone and we don&amp;#39;t want to leak root password, we still don&amp;#39;t want">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  <!--link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css"-->
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-27155459-3', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">kmiku7&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">JUST DO IT.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://kmiku7.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Keep-environment-variables-with-sudo-command" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/09/20/Keep-environment-variables-with-sudo-command/" class="article-date">
+  <time datetime="2019-09-20T10:36:46.000Z" itemprop="datePublished">Sep 20 2019</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Linux/">Linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Keep environment variables with sudo command.
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>We have a complicated shell script, and need root permission to finish some operations. But this script may be executed by everyone and we don&#39;t want to leak root password, we still don&#39;t want everyone to do anything that root can do.<br>So we can add this script into <code>/etc/sudoers</code> with NOPASSWD.<br>Ref:<br><a href="https://askubuntu.com/questions/159007/how-do-i-run-specific-sudo-commands-without-a-password" target="_blank" rel="noopener">How do I run specific sudo commands without a password?</a></p>
+<p>But the script misses some environment variables when using sudo to execute. We can use <code>-E</code> in command line to keep environment variables in current session, or configure <code>Defaults !env_reset</code> option in <code>/etc/sudoers</code>.<br>But the <code>PYTHONPATH</code> environment variables is still missing. We can use <code>Defaults env_keep+=PYTHONPATH</code> to keep <code>PYTHONPATH</code> explicitly.<br>Ref:<br><a href="https://unixhealthcheck.com/blog?id=363" target="_blank" rel="noopener">Avoid using env_reset in sudoers file</a></p>
+<p>Only commenting <code>Defaults env_reset</code> is useless, because reset environment is default action.</p>
+<p>We still want to known why sudo can keep many custom environment variables except <code>PYTHONPATH</code>.<br>After reading codes, it&#39;s because <code>PYTHONPATH</code> is a bad variable. Although we explictly set keep env, these bad variables still will be removed. Except explictly use <code>`Defaults env_keep+=PYTHONPATH</code> to keep.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Merge another environment with our private copy.</span></span><br><span class="line"><span class="comment"> * Only overwrite an existing variable if it is not</span></span><br><span class="line"><span class="comment"> * being preserved from the user's environment.</span></span><br><span class="line"><span class="comment"> * Returns true on success or false on failure.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">bool</span></span><br><span class="line">env_merge(<span class="keyword">char</span> * <span class="keyword">const</span> envp[])</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (ep = envp; *ep != <span class="literal">NULL</span>; ep++) &#123;</span><br><span class="line">    <span class="comment">/* XXX - avoid checking value here, should only check name */</span></span><br><span class="line">    <span class="keyword">bool</span> overwrite = def_env_reset ? !env_should_keep(*ep) : env_should_delete(*ep);</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>In <code>env_should_keep()</code> it will check if <code>ep</code> in bad variables list.</p>
+<p>Following list are these bad variables:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Default table of "bad" variables to remove from the environment.</span></span><br><span class="line"><span class="comment"> * XXX - how to omit TERMCAP if it starts with '/'?</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">char</span> *initial_badenv_table[] = &#123;</span><br><span class="line">    <span class="string">"IFS"</span>,</span><br><span class="line">    <span class="string">"CDPATH"</span>,</span><br><span class="line">    <span class="string">"LOCALDOMAIN"</span>,</span><br><span class="line">    <span class="string">"RES_OPTIONS"</span>,</span><br><span class="line">    <span class="string">"HOSTALIASES"</span>,</span><br><span class="line">    <span class="string">"NLSPATH"</span>,</span><br><span class="line">    <span class="string">"PATH_LOCALE"</span>,</span><br><span class="line">    <span class="string">"LD_*"</span>,</span><br><span class="line">    <span class="string">"_RLD*"</span>,</span><br><span class="line">#ifdef __hpux</span><br><span class="line">    <span class="string">"SHLIB_PATH"</span>,</span><br><span class="line">#endif <span class="comment">/* __hpux */</span></span><br><span class="line">#ifdef _AIX</span><br><span class="line">    <span class="string">"LDR_*"</span>,</span><br><span class="line">    <span class="string">"LIBPATH"</span>,</span><br><span class="line">    <span class="string">"AUTHSTATE"</span>,</span><br><span class="line">#endif</span><br><span class="line">#ifdef __APPLE__</span><br><span class="line">    <span class="string">"DYLD_*"</span>,</span><br><span class="line">#endif</span><br><span class="line">#ifdef HAVE_KERB5</span><br><span class="line">    <span class="string">"KRB5_CONFIG*"</span>,</span><br><span class="line">    <span class="string">"KRB5_KTNAME"</span>,</span><br><span class="line">#endif <span class="comment">/* HAVE_KERB5 */</span></span><br><span class="line">#ifdef HAVE_SECURID</span><br><span class="line">    <span class="string">"VAR_ACE"</span>,</span><br><span class="line">    <span class="string">"USR_ACE"</span>,</span><br><span class="line">    <span class="string">"DLC_ACE"</span>,</span><br><span class="line">#endif <span class="comment">/* HAVE_SECURID */</span></span><br><span class="line">    <span class="string">"TERMINFO"</span>,			<span class="comment">/* terminfo, exclusive path to terminfo files */</span></span><br><span class="line">    <span class="string">"TERMINFO_DIRS"</span>,		<span class="comment">/* terminfo, path(s) to terminfo files */</span></span><br><span class="line">    <span class="string">"TERMPATH"</span>,			<span class="comment">/* termcap, path(s) to termcap files */</span></span><br><span class="line">    <span class="string">"TERMCAP"</span>,			<span class="comment">/* XXX - only if it starts with '/' */</span></span><br><span class="line">    <span class="string">"ENV"</span>,			<span class="comment">/* ksh, file to source before script runs */</span></span><br><span class="line">    <span class="string">"BASH_ENV"</span>,			<span class="comment">/* bash, file to source before script runs */</span></span><br><span class="line">    <span class="string">"PS4"</span>,			<span class="comment">/* bash, prefix for lines in xtrace mode */</span></span><br><span class="line">    <span class="string">"GLOBIGNORE"</span>,		<span class="comment">/* bash, globbing patterns to ignore */</span></span><br><span class="line">    <span class="string">"BASHOPTS"</span>,			<span class="comment">/* bash, initial "shopt -s" options */</span></span><br><span class="line">    <span class="string">"SHELLOPTS"</span>,		<span class="comment">/* bash, initial "set -o" options */</span></span><br><span class="line">    <span class="string">"JAVA_TOOL_OPTIONS"</span>,	<span class="comment">/* java, extra command line options */</span></span><br><span class="line">    <span class="string">"PERLIO_DEBUG "</span>,		<span class="comment">/* perl, debugging output file */</span></span><br><span class="line">    <span class="string">"PERLLIB"</span>,			<span class="comment">/* perl, search path for modules/includes */</span></span><br><span class="line">    <span class="string">"PERL5LIB"</span>,			<span class="comment">/* perl 5, search path for modules/includes */</span></span><br><span class="line">    <span class="string">"PERL5OPT"</span>,			<span class="comment">/* perl 5, extra command line options */</span></span><br><span class="line">    <span class="string">"PERL5DB"</span>,			<span class="comment">/* perl 5, command used to load debugger */</span></span><br><span class="line">    <span class="string">"FPATH"</span>,			<span class="comment">/* ksh, search path for functions */</span></span><br><span class="line">    <span class="string">"NULLCMD"</span>,			<span class="comment">/* zsh, command for null file redirection */</span></span><br><span class="line">    <span class="string">"READNULLCMD"</span>,		<span class="comment">/* zsh, command for null file redirection */</span></span><br><span class="line">    <span class="string">"ZDOTDIR"</span>,			<span class="comment">/* zsh, search path for dot files */</span></span><br><span class="line">    <span class="string">"TMPPREFIX"</span>,		<span class="comment">/* zsh, prefix for temporary files */</span></span><br><span class="line">    <span class="string">"PYTHONHOME"</span>,		<span class="comment">/* python, module search path */</span></span><br><span class="line">    <span class="string">"PYTHONPATH"</span>,		<span class="comment">/* python, search path */</span></span><br><span class="line">    <span class="string">"PYTHONINSPECT"</span>,		<span class="comment">/* python, allow inspection */</span></span><br><span class="line">    <span class="string">"PYTHONUSERBASE"</span>,		<span class="comment">/* python, per user site-packages directory */</span></span><br><span class="line">    <span class="string">"RUBYLIB"</span>,			<span class="comment">/* ruby, library load path */</span></span><br><span class="line">    <span class="string">"RUBYOPT"</span>,			<span class="comment">/* ruby, extra command line options */</span></span><br><span class="line">    <span class="string">"*=()*"</span>,			<span class="comment">/* bash functions */</span></span><br><span class="line">    <span class="literal">NULL</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <!--a data-url="http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/" data-id="ck0s0k2n30004tls6d2pvlk9r" class="article-share-link">Share</a-->
+      
+        <a href="http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Shell/">Shell</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/en/">en</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/sudo/">sudo</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/08/01/Do-Pagination-With-Table-Database-Sharding/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Do Pagination With Table/Database Sharding</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Database/">Database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Nginx/">Nginx</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/OpenTSDB/">OpenTSDB</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Squid/">Squid</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/cpp/">cpp</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/golang/">golang</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/ros/">ros</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Bugfix/">Bugfix</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/DATABASE/">DATABASE</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Design/">Design</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/">Django</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HBase/">HBase</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/">Linux</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Nginx/">Nginx</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NoSQL/">NoSQL</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenTSDB/">OpenTSDB</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Pagination/">Pagination</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Partition/">Partition</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/">Python</a><span class="tag-list-count">6</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Requests/">Requests</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Sharding/">Sharding</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Shell/">Shell</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Squid/">Squid</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ac-search/">ac-search</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm/">algorithm</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/avl-tree/">avl-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/b-tree/">b-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/clrs/">clrs</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/code-analysis/">code-analysis</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/codis/">codis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/cpp/">cpp</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/curl/">curl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/data-structure/">data-structure</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/">debug</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker/">docker</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/en/">en</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang/">golang</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gorun/">gorun</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/leetcode/">leetcode</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libchan/">libchan</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/libcurl/">libcurl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/list/">list</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/logging/">logging</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/merge-sort/">merge-sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/morris-travesal/">morris-travesal</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operation/">operation</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/proxy/">proxy</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros/">ros</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ros1/">ros1</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosconsole/">rosconsole</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roscore/">roscore</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/roslaunch/">roslaunch</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rosout/">rosout</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sort/">sort</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stl/">stl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/string-match/">string-match</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/sudo/">sudo</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/thread/">thread</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threaded-binary-tree/">threaded-binary-tree</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/threading/">threading</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tree/">tree</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/trie/">trie</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uWSGI/">uWSGI</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/zh/">zh</a><span class="tag-list-count">11</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Bugfix/" style="font-size: 12.86px;">Bugfix</a> <a href="/tags/DATABASE/" style="font-size: 15.71px;">DATABASE</a> <a href="/tags/Design/" style="font-size: 10px;">Design</a> <a href="/tags/Django/" style="font-size: 12.86px;">Django</a> <a href="/tags/HBase/" style="font-size: 14.29px;">HBase</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/Nginx/" style="font-size: 11.43px;">Nginx</a> <a href="/tags/NoSQL/" style="font-size: 14.29px;">NoSQL</a> <a href="/tags/OpenTSDB/" style="font-size: 14.29px;">OpenTSDB</a> <a href="/tags/Pagination/" style="font-size: 10px;">Pagination</a> <a href="/tags/Partition/" style="font-size: 10px;">Partition</a> <a href="/tags/Python/" style="font-size: 17.14px;">Python</a> <a href="/tags/Requests/" style="font-size: 10px;">Requests</a> <a href="/tags/Sharding/" style="font-size: 10px;">Sharding</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Squid/" style="font-size: 10px;">Squid</a> <a href="/tags/ac-search/" style="font-size: 10px;">ac-search</a> <a href="/tags/algorithm/" style="font-size: 12.86px;">algorithm</a> <a href="/tags/avl-tree/" style="font-size: 10px;">avl-tree</a> <a href="/tags/b-tree/" style="font-size: 10px;">b-tree</a> <a href="/tags/clrs/" style="font-size: 10px;">clrs</a> <a href="/tags/code-analysis/" style="font-size: 20px;">code-analysis</a> <a href="/tags/codis/" style="font-size: 10px;">codis</a> <a href="/tags/cpp/" style="font-size: 15.71px;">cpp</a> <a href="/tags/curl/" style="font-size: 10px;">curl</a> <a href="/tags/data-structure/" style="font-size: 12.86px;">data-structure</a> <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/docker/" style="font-size: 10px;">docker</a> <a href="/tags/en/" style="font-size: 12.86px;">en</a> <a href="/tags/golang/" style="font-size: 12.86px;">golang</a> <a href="/tags/gorun/" style="font-size: 10px;">gorun</a> <a href="/tags/leetcode/" style="font-size: 12.86px;">leetcode</a> <a href="/tags/libchan/" style="font-size: 10px;">libchan</a> <a href="/tags/libcurl/" style="font-size: 10px;">libcurl</a> <a href="/tags/list/" style="font-size: 10px;">list</a> <a href="/tags/logging/" style="font-size: 10px;">logging</a> <a href="/tags/merge-sort/" style="font-size: 10px;">merge-sort</a> <a href="/tags/morris-travesal/" style="font-size: 10px;">morris-travesal</a> <a href="/tags/operation/" style="font-size: 10px;">operation</a> <a href="/tags/proxy/" style="font-size: 10px;">proxy</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ros/" style="font-size: 12.86px;">ros</a> <a href="/tags/ros1/" style="font-size: 12.86px;">ros1</a> <a href="/tags/rosconsole/" style="font-size: 10px;">rosconsole</a> <a href="/tags/roscore/" style="font-size: 12.86px;">roscore</a> <a href="/tags/roslaunch/" style="font-size: 11.43px;">roslaunch</a> <a href="/tags/rosout/" style="font-size: 10px;">rosout</a> <a href="/tags/sort/" style="font-size: 10px;">sort</a> <a href="/tags/stl/" style="font-size: 10px;">stl</a> <a href="/tags/string-match/" style="font-size: 10px;">string-match</a> <a href="/tags/sudo/" style="font-size: 10px;">sudo</a> <a href="/tags/thread/" style="font-size: 10px;">thread</a> <a href="/tags/threaded-binary-tree/" style="font-size: 10px;">threaded-binary-tree</a> <a href="/tags/threading/" style="font-size: 10px;">threading</a> <a href="/tags/tree/" style="font-size: 12.86px;">tree</a> <a href="/tags/trie/" style="font-size: 10px;">trie</a> <a href="/tags/uWSGI/" style="font-size: 11.43px;">uWSGI</a> <a href="/tags/zh/" style="font-size: 18.57px;">zh</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">April 2015</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/01/">January 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/11/">November 2014</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/10/">October 2014</a><span class="archive-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/09/20/Keep-environment-variables-with-sudo-command/">Keep environment variables with sudo command.</a>
+          </li>
+        
+          <li>
+            <a href="/2019/08/01/Do-Pagination-With-Table-Database-Sharding/">Do Pagination With Table/Database Sharding</a>
+          </li>
+        
+          <li>
+            <a href="/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/">Why does squid print &#39;TCP_REFRESH_UNMODIFIED_ABORTED&#39;?</a>
+          </li>
+        
+          <li>
+            <a href="/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/">Why uploading large file using Requests is very slow?</a>
+          </li>
+        
+          <li>
+            <a href="/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/">Upgrading To A New Nginx Binary In Different Place On The Fly</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 kmiku7<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="https://github.com/kmiku7/landscape-k" target="_blank">landscape-k</a>.
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'kmiku7';
+  
+  var disqus_url = 'http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

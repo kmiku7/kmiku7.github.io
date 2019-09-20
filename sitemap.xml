@@ -2,16 +2,51 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/</loc>
+    <loc>http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/</loc>
     
-    <lastmod>2018-11-21T10:55:35.936Z</lastmod>
+    <lastmod>2019-09-20T11:03:41.125Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://kmiku7.github.io/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/</loc>
+    
+    <lastmod>2019-09-20T10:35:53.285Z</lastmod>
     
   </url>
   
   <url>
     <loc>http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/</loc>
     
-    <lastmod>2018-11-19T05:27:58.039Z</lastmod>
+    <lastmod>2019-09-20T10:35:53.283Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/</loc>
+    
+    <lastmod>2019-09-20T10:35:53.281Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://kmiku7.github.io/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/</loc>
+    
+    <lastmod>2019-09-20T10:35:53.279Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://kmiku7.github.io/2019/08/01/Do-Pagination-With-Table-Database-Sharding/</loc>
+    
+    <lastmod>2019-09-20T10:35:53.277Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/</loc>
+    
+    <lastmod>2019-08-01T12:25:20.475Z</lastmod>
     
   </url>
   
@@ -19,27 +54,6 @@
     <loc>http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-3-Commands/</loc>
     
     <lastmod>2018-11-16T11:50:31.566Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://kmiku7.github.io/2018/11/07/upgrading-to-a-new-nginx-binary-in-different-place-on-the-fly/</loc>
-    
-    <lastmod>2018-11-07T05:58:38.887Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://kmiku7.github.io/2018/03/27/OpenTSDB-Code-Reading-4-Query-Command/</loc>
-    
-    <lastmod>2018-03-27T11:20:14.779Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://kmiku7.github.io/2018/03/23/OpenTSDB-Code-Reading-2-Server-Framework/</loc>
-    
-    <lastmod>2018-03-23T12:23:38.265Z</lastmod>
     
   </url>
   
