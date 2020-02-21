@@ -106,7 +106,7 @@ ga('send', 'pageview');
 <p>How to get all SQL queries or we want in production? MySQL or database middleware can log these. But for all kinds of limitation, it&#39;s better to log it by ourselves.</p>
 <p>Here are some methods to log it without active DEBUG option.</p>
 <h1 id="Logging-Methods"><a href="#Logging-Methods" class="headerlink" title="Logging Methods"></a>Logging Methods</h1><p>When we set DEBUG with True, we have two places to get queries.<br>One is in log file, the output like this:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DEBUG 2020-02-21 10:35:12,214 33337 [utils.py:91] (0.036) SELECT @@SQL_AUTO_IS_NULL; args=None</span><br><span class="line">DEBUG 2020-02-21 10:35:12,251 33337 [utils.py:91] (0.036) SELECT VERSION(); args=None</span><br></pre></td></tr></table></figure></p>
-<p>Another one is using Django database connection&#39;s <a href="https://github.com/django/django/blob/3.0.3/django/db/backends/base/base.py#L154" target="_blank" rel="noopener">&#39;queries&#39; property</a>. It stores all queries in one request, and is cleared automatically in <a href="https://github.com/django/django/blob/3.0.3/django/db/__init__.py#L44-L50" target="_blank" rel="noopener">here</a>. So we can add a middleware to traverse &#39;queries&#39; to log all SQLs.</p>
+<p>Another one is using Django database connection&#39;s &#39;queries&#39; property（<a href="https://github.com/django/django/blob/3.0.3/django/db/backends/base/base.py#L154" target="_blank" rel="noopener">code1</a>, <a href="https://docs.djangoproject.com/en/dev/faq/models/#how-can-i-see-the-raw-sql-queries-django-is-running" target="_blank" rel="noopener">doc1</a>). It stores all queries in one request, and is cleared automatically in <a href="https://github.com/django/django/blob/3.0.3/django/db/__init__.py#L44-L50" target="_blank" rel="noopener">here</a>. So we can add a middleware to traverse &#39;queries&#39; to log all SQLs.</p>
 <p>Above two methods can be enabled by set DEBUG with True.</p>
 <p>The following part will discuss how to enable database logging function without set DEBUG.</p>
 <h1 id="Custom-Methods"><a href="#Custom-Methods" class="headerlink" title="Custom Methods"></a>Custom Methods</h1><h2 id="Enable-database-logging-function"><a href="#Enable-database-logging-function" class="headerlink" title="Enable database logging function."></a>Enable database logging function.</h2><p>From codes, we find database logging/recording SQL functions are controlled by <a href="https://github.com/django/django/blob/3.0.3/django/db/backends/base/base.py#L150" target="_blank" rel="noopener">&#39;queries_logged&#39; property</a>. And it is determined by <code>settings.DEBUG</code> and <code>self.force_debug_cursor</code>, the last one is hard-coded without function argument, setting option to set it. Even in subclass, the concrete database backends.</p>
@@ -137,7 +137,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2020/02/21/Log-all-SQL-queries-in-Django/" data-id="ck6w0z0b7000128jhom56e4nx" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2020/02/21/Log-all-SQL-queries-in-Django/" data-id="ck6w1eda40001sljhyegwh8dq" class="article-share-link">Share</a-->
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Django/">Django</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li></ul>
@@ -188,7 +188,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/" data-id="ck6w0z0bg000428jh8es1fgir" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/" data-id="ck6w1edaa0004sljh2f5f9fxj" class="article-share-link">Share</a-->
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Shell/">Shell</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/en/">en</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/sudo/">sudo</a></li></ul>
@@ -284,7 +284,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2019/08/01/Do-Pagination-With-Table-Database-Sharding/" data-id="ck6w0z0b0000028jhzjlwigo2" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2019/08/01/Do-Pagination-With-Table-Database-Sharding/" data-id="ck6w1eda00000sljh0ybf6519" class="article-share-link">Share</a-->
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DATABASE/">DATABASE</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Design/">Design</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Pagination/">Pagination</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Partition/">Partition</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Sharding/">Sharding</a></li></ul>
@@ -333,7 +333,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/" data-id="ck6w0z0bw000a28jhd7rhmpu0" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/11/21/Why-does-squid-print-TCP-REFRESH-UNMODIFIED-ABORTED-when-refresh-its-representation/" data-id="ck6w1edan000fsljh5sa86lze" class="article-share-link">Share</a-->
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Django/">Django</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Squid/">Squid</a></li></ul>
@@ -384,7 +384,7 @@ ga('send', 'pageview');
       
     </div>
     <footer class="article-footer">
-      <!--a data-url="http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/" data-id="ck6w0z0c2000e28jh3de13zca" class="article-share-link">Share</a-->
+      <!--a data-url="http://kmiku7.github.io/2018/11/16/Why-uploading-large-file-using-Requests-is-very-slow/" data-id="ck6w1edal000esljhco283ubl" class="article-share-link">Share</a-->
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Requests/">Requests</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/code-analysis/">code-analysis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/curl/">curl</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/libcurl/">libcurl</a></li></ul>
