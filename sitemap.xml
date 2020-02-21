@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://kmiku7.github.io/2020/02/21/Log-all-SQL-queries-in-Django/</loc>
+    
+    <lastmod>2020-02-21T10:24:59.215Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://kmiku7.github.io/2019/09/20/Keep-environment-variables-with-sudo-command/</loc>
     
     <lastmod>2019-09-20T11:07:53.414Z</lastmod>
